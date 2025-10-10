@@ -1,0 +1,21 @@
+{
+  "name": "Node.js & TypeScript",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "postCreateCommand": "rm -rf node_modules && npm ci && npm run build",
+
+  // Optional: forward ports your app uses (e.g., 3000 for web dev)
+  "forwardPorts": [3000],
+
+  // Optional: add VS Code extensions and settings
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}
