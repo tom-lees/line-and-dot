@@ -1,40 +1,58 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const mountRef = useRef<HTMLDivElement | null>(null);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white flex flex-col items-center justify-center p-6">
-      <div className="flex space-x-6 mb-6">
-        <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">
-          <img src={viteLogo} className="w-20 h-20 hover:scale-110 transition-transform" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noopener noreferrer">
-          <img src={reactLogo} className="w-20 h-20 hover:scale-110 transition-transform" alt="React logo" />
-        </a>
-      </div>
+  useEffect(() => {
+    if (!mountRef.current) return;
 
-      <h1 className="text-4xl font-bold mb-4">Vite + React + Tailwind</h1>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    mountRef.current.appendChild(renderer.domElement);
 
-      <div className="bg-white text-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md text-center">
-        <button
-          onClick={() => setCount((count) => count + 1)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-        >
-          Count is {count}
-        </button>
-        <p className="mt-4 text-sm">
-          Edit <code className="bg-gray-100 px-1 py-0.5 rounded">src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
+    // Line geometry
+    const points = [new THREE.Vector3(-5, 0, 0), new THREE.Vector3(5, 0, 0)];
+    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const line = new THREE.Line(lineGeometry, lineMaterial);
+    scene.add(line);
 
-      <p className="mt-6 text-sm opacity-80">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+    // Dot geometry
+    const dotGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+    scene.add(dot);
+
+    camera.position.z = 10;
+
+    // Animation loop
+    let t = -5;
+    const animate = () => {
+      requestAnimationFrame(animate);
+      t += 0.05;
+      if (t > 5) t = -5;
+      dot.position.x = t;
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    // Cleanup
+    return () => {
+      if (mountRef.current) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+    };
+  }, []);
+
+  return <div ref={mountRef} />;
 }
 
-export default App
+export default App;
