@@ -5,6 +5,20 @@ function App() {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    function createTextLabel(text: string) {
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d")!;
+      context.font = "24px Arial";
+      context.fillStyle = "white";
+      context.fillText(text, 0, 24);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({ map: texture });
+      const sprite = new THREE.Sprite(material);
+      sprite.scale.set(2, 1, 1); // Adjust size as needed
+      return sprite;
+    }
+
     if (!mountRef.current) return;
 
     const scene = new THREE.Scene();
@@ -19,11 +33,11 @@ function App() {
     mountRef.current.appendChild(renderer.domElement);
 
     // Line geometry
-    const points = [
-      new THREE.Vector3(-5, 0, 0),
-      new THREE.Vector3(-3, 1, 7.5),
-      new THREE.Vector3(0, 4, -30),
-      new THREE.Vector3(5, 0, 5),
+    const labeledPoints = [
+      { label: "STATION 1", position: new THREE.Vector3(-5, 0, 0) },
+      { label: "STATION 2", position: new THREE.Vector3(-2, 1, 7.5) },
+      { label: "STATION 3", position: new THREE.Vector3(0, 4, 2) },
+      { label: "STATION 4", position: new THREE.Vector3(5, 0, 5) },
     ];
 
     // const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -32,7 +46,12 @@ function App() {
     // scene.add(line);
 
     // Curve
-    const curve = new THREE.CatmullRomCurve3(points, true, "centripetal");
+    const curve = new THREE.CatmullRomCurve3(
+      labeledPoints.map((p) => p.position),
+      true,
+      "centripetal"
+    );
+
     // curve.curveType = "catmullrom";
     // curve.closed = false;
     const curvePoints = curve.getPoints(100); // 100 = number of segments for smoothness
@@ -41,10 +60,25 @@ function App() {
     const curveLine = new THREE.Line(curveGeometry, curveMaterial);
     scene.add(curveLine);
 
+    labeledPoints.forEach(({ label, position }) => {
+      const labelSprite = createTextLabel(label);
+      labelSprite.position.copy(position);
+      scene.add(labelSprite);
+    });
+
     // Dot geometry
     const dotGeometry = new THREE.SphereGeometry(0.2, 32, 32);
-    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    // TODO Is the emmission doing anything?
+    const dotMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 10,
+    });
     const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+    // TODO Is the light doing anything?
+    const pointLight = new THREE.PointLight(0xffffff, 10, 100);
+    scene.add(pointLight);
+
     scene.add(dot);
 
     // Animate the dot along the curve
