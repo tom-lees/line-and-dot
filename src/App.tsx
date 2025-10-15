@@ -1,5 +1,13 @@
+// TODOs
+// Investigate adding extra content to api call, line, outbound/inbound
+// Filter by line and line segment.  i.e. Reading => Stanford, Outbound
+// Live updates every 10 seconds
+// Display a records update time, maybe leave record up and use a boolean to
+// show it is inactive, rather than cleaning it from dataset during this
+// testing phase.
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import TrainInfoPanel from "./API";
 
 function App() {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -105,7 +113,12 @@ function App() {
     };
   }, []);
 
-  return <div ref={mountRef} />;
+  return (
+    <>
+      <div ref={mountRef} />
+      <TrainInfoPanel />
+    </>
+  );
 }
 
 export default App;
