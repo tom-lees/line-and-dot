@@ -136,7 +136,7 @@ import { useEffect, useState } from "react";
 //   return trainList;
 // }
 
-// const url = "https://api.tfl.gov.uk/Line/elizabeth/Arrivals";
+const url = "https://api.tfl.gov.uk/Line/elizabeth/Arrivals";
 
 // const trainData: Record<string, TrainRecord[]> = {};
 
@@ -212,6 +212,17 @@ import { useEffect, useState } from "react";
 //   runPipeline(iteration++);
 // }, 10000);
 
+type ApiRecord = {
+  id: string;
+  vehicleId: string;
+  stationName: string;
+  destinationName: string;
+  expectedArrival: string;
+  timeToLive: string;
+  platformDirection: string;
+  towards: string;
+};
+
 type TrainRecord = {
   id: string;
   stationName: string;
@@ -220,18 +231,9 @@ type TrainRecord = {
   timeToLive: number;
   timeCreate: number;
   timeEdit: number;
+  platformDirection: string;
+  towards: string;
 };
-
-type ApiRecord = {
-  id: string;
-  vehicleId: string;
-  stationName: string;
-  destinationName: string;
-  expectedArrival: string;
-  timeToLive: string;
-};
-
-const url = "https://api.tfl.gov.uk/Line/elizabeth/Arrivals";
 
 const formatTime = (ms: number) =>
   new Date(ms).toLocaleTimeString("en-GB", {
@@ -255,6 +257,8 @@ export default function TrainInfoPanel() {
         timeToLive,
         timeCreate: now,
         timeEdit: now,
+        platformDirection: record.platformDirection,
+        towards: record.towards,
       };
     };
 
@@ -361,6 +365,8 @@ export default function TrainInfoPanel() {
               <li key={entry.id}>
                 <div>Station: {entry.stationName}</div>
                 <div>Destination: {entry.destinationName}</div>
+                <div>Direction: {entry.platformDirection}</div>
+                <div>Towards: {entry.towards}</div>
                 <div>Arrival: {formatTime(entry.expectedArrival)}</div>
               </li>
             ))}
