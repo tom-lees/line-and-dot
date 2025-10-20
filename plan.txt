@@ -1,8 +1,5 @@
 The API needs to fetch the data, but then we need to parse that dataset and:
 - Create new train elements
-
-Train elements consist of, End of line, Next stop, estimate time to next stop.
- 
-
+- Think about filtering by train, or line, or segment.
 - Update exisiting train elements
 - Drop old train elements
