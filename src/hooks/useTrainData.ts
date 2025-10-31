@@ -1,4 +1,3 @@
-// useTrainData.ts
 import { useEffect, useState } from "react";
 import { trainService } from "../data/trainService";
 import type { TrainRecord } from "../types/train";
@@ -8,10 +7,18 @@ export default function useTrainData() {
 
   useEffect(() => {
     trainService.start();
-    const unsubscribe = trainService.subscribe(setData);
+    const unsubscribe = trainService.subscribe((data) => {
+      console.log("New train data received", data);
+      setData(data);
+    });
+
+    const interval = setInterval(() => {
+      trainService.refresh();
+    }, 10000); // refresh every 10 seconds
+
     return () => {
       unsubscribe();
-      // keep service running if other subscribers remain — do not stop globally here
+      clearInterval(interval);
     };
   }, []);
 

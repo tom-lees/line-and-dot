@@ -30,7 +30,7 @@ describe("parseApiRecord", () => {
 
     const expectedTimeToStation = Math.round(
       (Date.parse(apiRecord.timeToLive) - now) / 1000
-    );
+    ); // TODO Investigate this
     expect(result.timeToStation).toBe(expectedTimeToStation);
   });
 });

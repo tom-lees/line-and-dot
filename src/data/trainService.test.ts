@@ -5,14 +5,14 @@ import type { ApiRecord, TrainRecord } from "../types/train";
 const mockApiResponse: ApiRecord[] = [
   {
     id: "train-001",
-    vehicleId: "veh-001",
-    stationName: "Canary Wharf",
     destinationName: "Reading",
     direction: "outbound",
     expectedArrival: new Date(Date.now() + 60000).toISOString(), // 1 min from now
+    lineId: "elizabeth",
+    stationName: "Canary Wharf",
     timeToLive: new Date(Date.now() + 15000).toISOString(), // 15 sec from now
     timeToStation: 15,
-    lineId: "elizabeth",
+    vehicleId: "veh-001",
   },
 ];
 

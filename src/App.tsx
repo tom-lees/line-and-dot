@@ -7,6 +7,7 @@
 // testing phase.
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import TrainInfoPanel from "./components/TrainInfoPanel";
 
 function App() {
   const mountRef = useRef<HTMLDivElement | null>(null);
