@@ -8,6 +8,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import TrainInfoPanel from "./components/TrainInfoPanel";
+import SingleTrainPanel from "./components/SingleTrainPanel";
 
 function App() {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -115,6 +116,7 @@ function App() {
 
   return (
     <>
+      <SingleTrainPanel trainId="202511118006568" />
       <div ref={mountRef} />
       <TrainInfoPanel />
     </>
