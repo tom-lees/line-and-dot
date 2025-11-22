@@ -1,5 +1,7 @@
 import useTrainData from "../hooks/useTrainData";
 import type { TrainRecord } from "../types/train";
+import findLineForTrain from "./trainFindLine";
+import { network } from "./trainLines";
 
 interface SingleTrainPanelProps {
   trainId: string; // the ID of the train you want to show
@@ -18,24 +20,35 @@ export default function SingleTrainPanel({ trainId }: SingleTrainPanelProps) {
     return <div>No train found with ID {trainId}</div>;
   }
 
+  const trainLine = findLineForTrain(
+    network.elizabeth,
+    train.stationName,
+    train.destinationName
+  );
+
   return (
     <div className="flex flex-col train-panel justify-end items-end">
       <h2>Train {train.id}</h2>
       <p>
-        <strong>Status:</strong> {train.destinationName}
+        <strong>Destination:</strong> {train.destinationName}
       </p>
       <p>
-        <strong>Origin:</strong> {train.stationName}
+        <strong>Station Name:</strong> {train.stationName}
       </p>
       <p>
-        <strong>Destination:</strong> {train.timeCreate}
+        <strong>Created:</strong>{" "}
+        {new Date(train.timeCreate).toLocaleTimeString()}
       </p>
       <p>
-        <strong>Scheduled:</strong> {train.timeEdit}
+        <strong>Edited:</strong> {new Date(train.timeEdit).toLocaleTimeString()}
       </p>
       <p>
-        <strong>Platform:</strong> {train.vehicleId}
+        <strong>Vehicle:</strong> {train.vehicleId}
+      </p>
+      <p>
+        <strong>Line:</strong> {trainLine?.name}
       </p>
     </div>
   );
 }
+// 202511228007616
