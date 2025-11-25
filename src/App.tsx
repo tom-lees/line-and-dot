@@ -1,33 +1,14 @@
 // TODOs
-// Investigate adding extra content to api call, line, outbound/inbound
-// Filter by line and line segment.  i.e. Reading => Stanford, Outbound
-// Live updates every 10 seconds
-// Display a records update time, maybe leave record up and use a boolean to
-// show it is inactive, rather than cleaning it from dataset during this
+// Some of the line is still off the screen.  This should not happen
 // testing phase.
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import TrainInfoPanel from "./components/TrainInfoPanel";
-import SingleTrainPanel from "./components/SingleTrainPanel";
+import { network } from "./components/trainLines";
 
 function App() {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    function createTextLabel(text: string) {
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d")!;
-      context.font = "24px Arial";
-      context.fillStyle = "white";
-      context.fillText(text, 0, 24);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      const material = new THREE.SpriteMaterial({ map: texture });
-      const sprite = new THREE.Sprite(material);
-      sprite.scale.set(2, 1, 1); // Adjust size as needed
-      return sprite;
-    }
-
     if (!mountRef.current) return;
 
     const scene = new THREE.Scene();
@@ -35,77 +16,68 @@ function App() {
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      1000000
     );
+    camera.position.z = 50;
+
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     mountRef.current.appendChild(renderer.domElement);
 
     // Line geometry
-    const labeledPoints = [
-      { label: "STATION 1", position: new THREE.Vector3(-5, 0, 0) },
-      { label: "STATION 2", position: new THREE.Vector3(-2, 1, 7.5) },
-      { label: "STATION 3", position: new THREE.Vector3(0, 4, 2) },
-      { label: "STATION 4", position: new THREE.Vector3(5, 0, 5) },
-    ];
+    // const labeledPoints2 = [
+    //   { label: "STATION 1", position: new THREE.Vector3(-1000005, 0, 0) },
+    //   { label: "STATION 2", position: new THREE.Vector3(-2, 1, 7.5) },
+    //   { label: "STATION 3", position: new THREE.Vector3(0, 4, 2) },
+    //   { label: "STATION 4", position: new THREE.Vector3(1000004, 0, 5) },
+    // maxDeviation
 
-    // const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-    // const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-    // const line = new THREE.Line(lineGeometry, lineMaterial);
-    // scene.add(line);
+    const stations = network.elizabeth.subsections[0].stations;
+    const meanX = stations.reduce((acc, n) => acc + n.x, 0) / stations.length;
+    const meanY = stations.reduce((acc, n) => acc + n.y, 0) / stations.length;
+    const maxDeviationX = Math.max(
+      ...stations.map((n) => Math.abs(n.x - meanX))
+    );
+    const maxDeviationY = Math.max(
+      ...stations.map((n) => Math.abs(n.y - meanY))
+    );
+    const maxDeviation = Math.max(maxDeviationX, maxDeviationY);
+
+    const labeledPoints = network.elizabeth.subsections[0].stations.map(
+      (n) => ({
+        label: n.name,
+        position: new THREE.Vector3(
+          (100 * (n.x - meanX)) / maxDeviation,
+          (100 * (n.y - meanY)) / maxDeviation,
+          0
+        ),
+      })
+    );
+    console.log(labeledPoints);
 
     // Curve
     const curve = new THREE.CatmullRomCurve3(
       labeledPoints.map((p) => p.position),
-      true,
+      false,
       "centripetal"
     );
 
-    // curve.curveType = "catmullrom";
-    // curve.closed = false;
     const curvePoints = curve.getPoints(100); // 100 = number of segments for smoothness
     const curveGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
     const curveMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff });
     const curveLine = new THREE.Line(curveGeometry, curveMaterial);
     scene.add(curveLine);
 
-    labeledPoints.forEach(({ label, position }) => {
-      const labelSprite = createTextLabel(label);
-      labelSprite.position.copy(position);
-      scene.add(labelSprite);
-    });
+    const geometry = new THREE.PlaneGeometry(4, 4); // width, height
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // red
+    const square = new THREE.Mesh(geometry, material);
+    scene.add(square);
 
-    // Dot geometry
-    const dotGeometry = new THREE.SphereGeometry(0.2, 32, 32);
-    // TODO Is the emmission doing anything?
-    const dotMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      emissive: 0xffffff,
-      emissiveIntensity: 10,
-    });
-    const dot = new THREE.Mesh(dotGeometry, dotMaterial);
-    // TODO Is the light doing anything?
-    const pointLight = new THREE.PointLight(0xffffff, 10, 100);
-    scene.add(pointLight);
-
-    scene.add(dot);
-
-    // Animate the dot along the curve
-    let t = 0;
     const animate = () => {
       requestAnimationFrame(animate);
-      t += 0.002;
-      if (t > 1) t = 0;
-
-      const position = curve.getPoint(t);
-      dot.position.set(position.x, position.y, position.z);
-
       renderer.render(scene, camera);
     };
     animate();
-
-    camera.position.z = 10;
-
     // Cleanup
     return () => {
       if (mountRef.current) {
@@ -116,9 +88,10 @@ function App() {
 
   return (
     <>
-      <SingleTrainPanel trainId="202511228007700" />
-      <div ref={mountRef} />
-      <TrainInfoPanel />
+      <div
+        className="h-screen w-screen overflow-hidden m-0 p-0"
+        ref={mountRef}
+      />
     </>
   );
 }
