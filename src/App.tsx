@@ -1,9 +1,9 @@
 // TODOs
-// Some of the line is still off the screen.  This should not happen
-// testing phase.
+// Line in not centred, is scaling or normalisation off.
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { network } from "./components/trainLines";
+import { Dot } from "./components/dot";
 
 function App() {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -16,30 +16,27 @@ function App() {
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000000
+      100000
     );
-    camera.position.z = 50;
+    camera.position.z = 150;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     mountRef.current.appendChild(renderer.domElement);
 
-    // Line geometry
-    // const labeledPoints2 = [
-    //   { label: "STATION 1", position: new THREE.Vector3(-1000005, 0, 0) },
-    //   { label: "STATION 2", position: new THREE.Vector3(-2, 1, 7.5) },
-    //   { label: "STATION 3", position: new THREE.Vector3(0, 4, 2) },
-    //   { label: "STATION 4", position: new THREE.Vector3(1000004, 0, 5) },
-    // maxDeviation
+    const rawStations = network.elizabeth.subsections[0].stations;
+    const minX = Math.min(...rawStations.map((n) => n.x));
+    const maxX = Math.max(...rawStations.map((n) => n.x));
+    const minY = Math.min(...rawStations.map((n) => n.y));
+    const maxY = Math.max(...rawStations.map((n) => n.y));
+    const midX = (minX + maxX) / 2;
+    const midY = (minY + maxY) / 2;
 
-    const stations = network.elizabeth.subsections[0].stations;
-    const meanX = stations.reduce((acc, n) => acc + n.x, 0) / stations.length;
-    const meanY = stations.reduce((acc, n) => acc + n.y, 0) / stations.length;
     const maxDeviationX = Math.max(
-      ...stations.map((n) => Math.abs(n.x - meanX))
+      ...rawStations.map((n) => Math.abs(n.x - midX))
     );
     const maxDeviationY = Math.max(
-      ...stations.map((n) => Math.abs(n.y - meanY))
+      ...rawStations.map((n) => Math.abs(n.y - midY))
     );
     const maxDeviation = Math.max(maxDeviationX, maxDeviationY);
 
@@ -47,13 +44,18 @@ function App() {
       (n) => ({
         label: n.name,
         position: new THREE.Vector3(
-          (100 * (n.x - meanX)) / maxDeviation,
-          (100 * (n.y - meanY)) / maxDeviation,
+          (100 * (n.x - midX)) / maxDeviation,
+          (100 * (n.y - midY)) / maxDeviation,
           0
         ),
       })
     );
-    console.log(labeledPoints);
+
+    //TODO Add actual station locations
+    const stations = rawStations.map((s, i) => ({
+      label: s.name,
+      u: i / (rawStations.length - 1), // evenly spaced for now
+    }));
 
     // Curve
     const curve = new THREE.CatmullRomCurve3(
@@ -68,13 +70,12 @@ function App() {
     const curveLine = new THREE.Line(curveGeometry, curveMaterial);
     scene.add(curveLine);
 
-    const geometry = new THREE.PlaneGeometry(4, 4); // width, height
-    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // red
-    const square = new THREE.Mesh(geometry, material);
-    scene.add(square);
+    const dot = new Dot(curve, stations, 0.001);
+    scene.add(dot.mesh);
 
     const animate = () => {
       requestAnimationFrame(animate);
+      dot.update();
       renderer.render(scene, camera);
     };
     animate();
