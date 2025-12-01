@@ -1,13 +1,32 @@
 // TODOs
 // Line in not centred, is scaling or normalisation off.
-import { useEffect, useRef } from "react";
-import * as THREE from "three";
-import { network } from "./components/trainLines";
 import { Dot } from "./components/dot";
+import { network } from "./components/trainLines";
+import * as THREE from "three";
+import { useEffect, useRef } from "react";
+import useTrainData from "./hooks/useTrainData";
 
 function App() {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
+  const { trainData } = useTrainData();
+
+  useEffect(() => {
+    const shenfield = Object.fromEntries(
+      Object.entries(trainData).filter(
+        ([, records]) =>
+          records.length > 0 &&
+          // TODO add a filter when takes the record with the smallest time (should be first in list)
+          records[0].destinationName === "Shenfield Rail Station"
+      )
+    );
+    console.log("Trains to Shenfield ", shenfield);
+    // shenfield.
+  }, [trainData]);
+
+  //
+  //  Stations & Station Sizing
+  //
   const rawStations = network.elizabeth.subsections[0].stations;
   const minX = Math.min(...rawStations.map((n) => n.x));
   const maxX = Math.max(...rawStations.map((n) => n.x));
@@ -31,6 +50,7 @@ function App() {
       0
     ),
   }));
+  // TODO Add useMemo
   const curve = new THREE.CatmullRomCurve3(
     labeledPoints.map((p) => p.position),
     false,

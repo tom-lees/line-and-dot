@@ -8,7 +8,6 @@ export default function useTrainData() {
   useEffect(() => {
     trainService.start();
     const unsubscribe = trainService.subscribe((data) => {
-      console.log("New train data received", data);
       setData(data);
     });
 

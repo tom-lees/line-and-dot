@@ -25,9 +25,9 @@ export class Dot {
     this.mesh.position.copy(this.curve.getPointAt(this.u));
   }
 
-  resume () {
+  resume() {
     this.stopped = false;
-  };
+  }
 
   update() {
     if (this.stopped) return;
