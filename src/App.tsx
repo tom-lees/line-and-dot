@@ -3,25 +3,49 @@
 import { Dot } from "./components/dot";
 import { network } from "./components/trainLines";
 import * as THREE from "three";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useTrainData from "./hooks/useTrainData";
+import type { TrainRecord } from "./types/train";
+
+type stationWithU = {
+  label: string;
+  u: number;
+};
+const calculateTrainPosition = (
+  train: TrainRecord,
+  stations: stationWithU[]
+): number => {
+  const stationName = train.stationName.toLowerCase().replace(" ", "").trim();
+  console.log("station name", stationName);
+  const station = stations.find(
+    (s) => s.label.toLowerCase().replace(" ", "").trim() === stationName
+  );
+  if (!station) {
+    console.warn(`Station ${train.stationName} not found in stations list.`);
+    return 0;
+  }
+  return station.u;
+};
 
 function App() {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
   const { trainData } = useTrainData();
 
+  const [shenfieldTrains, setShenfieldTrains] = useState<
+    Record<string, TrainRecord[]>
+  >({});
+
   useEffect(() => {
     const shenfield = Object.fromEntries(
       Object.entries(trainData).filter(
         ([, records]) =>
           records.length > 0 &&
-          // TODO add a filter when takes the record with the smallest time (should be first in list)
           records[0].destinationName === "Shenfield Rail Station"
       )
     );
     console.log("Trains to Shenfield ", shenfield);
-    // shenfield.
+    setShenfieldTrains(shenfield);
   }, [trainData]);
 
   //
@@ -51,31 +75,47 @@ function App() {
     ),
   }));
   // TODO Add useMemo
-  const curve = new THREE.CatmullRomCurve3(
-    labeledPoints.map((p) => p.position),
-    false,
-    "centripetal"
+  const curve = useMemo(
+    () =>
+      new THREE.CatmullRomCurve3(
+        labeledPoints.map((p) => p.position),
+        false,
+        "centripetal"
+      ),
+    [labeledPoints]
   );
-  const stations = rawStations.map((s, i) => ({
+
+  const stations: stationWithU[] = rawStations.map((s, i) => ({
     label: s.name,
     u: i / (rawStations.length - 1), // evenly spaced for now
   }));
 
-  const dotRef = useRef<Dot | null>(null);
-  if (!dotRef.current) {
-    dotRef.current = new Dot(curve, stations, 0.001);
-  }
+  const dotsRef = useRef<Dot[]>([]);
+
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Enter" && dotRef.current) {
-        dotRef.current.resume();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
+    // TODO Logic to remove old dots
+    dotsRef.current = [];
+
+    Object.values(shenfieldTrains).forEach((records) => {
+      const train = records[0];
+      const u = calculateTrainPosition(train, stations);
+      const dot = new Dot(curve, stations, u);
+      dotsRef.current.push(dot);
+    });
+  }, [shenfieldTrains, curve, stations]);
+
+  // useEffect(() => {
+  //   const handleKeyDown = (event: KeyboardEvent) => {
+  //     if (event.key === "Enter" && dotRef.current) {
+  //       dotRef.current.resume();
+  //     }
+  //   };
+
+  //   window.addEventListener("keydown", handleKeyDown);
+  //   return () => {
+  //     window.removeEventListener("keydown", handleKeyDown);
+  //   };
+  // }, []);
 
   useEffect(() => {
     const mountNode = mountRef.current;
@@ -100,20 +140,26 @@ function App() {
     const curveLine = new THREE.Line(curveGeometry, curveMaterial);
     scene.add(curveLine);
 
-    if (dotRef.current) {
-      scene.add(dotRef.current.mesh);
+    if (dotsRef.current) {
+      dotsRef.current.forEach((dot) => {
+        scene.add(dot.mesh);
+      });
     }
 
+    let rafId: number;
     const animate = () => {
-      requestAnimationFrame(animate);
-      if (dotRef.current) {
-        dotRef.current.update();
+      rafId = requestAnimationFrame(animate);
+      if (dotsRef.current) {
+        dotsRef.current.forEach((dot) => {
+          dot.update();
+        });
       }
       renderer.render(scene, camera);
     };
     animate();
     // Cleanup
     return () => {
+      if (typeof rafId === "number") cancelAnimationFrame(rafId);
       if (mountNode) {
         mountNode.removeChild(renderer.domElement);
       }

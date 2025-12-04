@@ -11,6 +11,7 @@ function upsertRecord(newEntry: TrainRecord, records: TrainRecord[] = []) {
   const copy = records.slice();
   const idx = copy.findIndex((r) => r.id === newEntry.id);
   if (idx !== -1) {
+    // preserve original creation time
     newEntry.timeCreate = copy[idx].timeCreate;
     copy[idx] = newEntry;
   } else {
