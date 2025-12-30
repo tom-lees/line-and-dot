@@ -2,20 +2,31 @@
 import type { ApiRecord, TrainRecord } from "../types/train";
 import { parseApiRecord } from "../data/parseApiRecord";
 
-const API_URL = "https://api.tfl.gov.uk/Line/elizabeth/Arrivals";
+const API_URL = "https://api.tfl.gov.uk/Line/jubilee/Arrivals";
 const POLL_MS = 10000;
 
 type Subscriber = (data: Record<string, TrainRecord[]>) => void;
 
-function upsertRecord(newEntry: TrainRecord, records: TrainRecord[] = []) {
+function upsertRecord(
+  newEntry: TrainRecord,
+  records: TrainRecord[] = [],
+  now: number
+) {
   const copy = records.slice();
   const idx = copy.findIndex((r) => r.id === newEntry.id);
-  if (idx !== -1) {
+
+  const isTrainFarAway = newEntry.expectedArrival - now > 30 * 60 * 1000;
+
+  if (idx === -1) {
+    // new record
+    // skip far away trains
+    if (isTrainFarAway) return copy;
+    copy.push(newEntry);
+  } else {
+    // update existing record
     // preserve original creation time
     newEntry.timeCreate = copy[idx].timeCreate;
     copy[idx] = newEntry;
-  } else {
-    copy.push(newEntry);
   }
   return copy.sort(
     (a, b) => a.expectedArrival - b.expectedArrival || a.id.localeCompare(b.id)
@@ -64,12 +75,17 @@ export const trainService = (() => {
       const raw = await res.json();
       if (!Array.isArray(raw)) throw new Error("Bad API response");
       const now = Date.now();
+      // Loops each (unordered by VehicleId) record from API.
       for (const row of raw as ApiRecord[]) {
         try {
           const vehicleId = row.vehicleId;
           const newEntry = parseApiRecord(row, now);
           if (newEntry.expectedArrival - now > 30 * 60 * 1000) continue;
-          store[vehicleId] = upsertRecord(newEntry, store[vehicleId] ?? []);
+          store[vehicleId] = upsertRecord(
+            newEntry,
+            store[vehicleId] ?? [],
+            now
+          );
         } catch (e) {
           console.error("Parse error for row", e, row);
         }
@@ -99,9 +115,16 @@ export const trainService = (() => {
   const refresh = () => updateFromApi();
 
   const subscribe = (cb: Subscriber) => {
+
     subscribers.add(cb);
-    // deliver immediate snapshot
+
+    // deliver immediate snapshot safely
+    try {
     cb({ ...store });
+    } catch (err) {
+      console.error('Subscriber threw during initial delivery:', err)
+    }
+
     return () => subscribers.delete(cb);
   };
 

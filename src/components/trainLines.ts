@@ -1,4 +1,5 @@
 import { reading_shenfield } from "./elizabeth";
+import { stanmore_stratford } from "./jubilee";
 
 export type Station = {
   name: string;
@@ -26,6 +27,15 @@ export const network: Network = {
     name: "Elizabeth",
     subsections: [
       { name: "Reading => Shenfield", stations: reading_shenfield },
+    ],
+  },
+  jubilee: {
+    name: "Jubilee",
+    subsections: [
+      {
+        name: "Stanmore => Stratford",
+        stations: stanmore_stratford,
+      },
     ],
   },
 };
