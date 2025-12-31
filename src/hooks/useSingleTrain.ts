@@ -10,10 +10,12 @@ import useTrainData from "./useTrainData";
  * Locates a moving train on the Reading to Shenfield line.
  */
 
+// const data: Record<string, TrainRecord[]>
+
 export default function useSingleTrain(): {
   selectedTrainId: string | null;
   setSelectedTrainId: (id: string | null) => void;
-  singleTrain: TrainRecord | null;
+  data: Record<string, TrainRecord[]> | null;
 } {
   const { trainData } = useTrainData();
 
@@ -21,13 +23,18 @@ export default function useSingleTrain(): {
   const [selectedTrainId, setSelectedTrainId] = useState<string | null>(null);
 
   // currently selected TrainRecord (keeps updating as trainData refreshes)
-  const [singleTrain, setSingleTrain] = useState<TrainRecord | null>(null);
+  const [singleTrainData, setSingleTrainData] = useState<Record<
+    string,
+    TrainRecord[]
+  > | null>(null);
 
   useEffect(() => {
     // If an id is already selected, keep updating that train's latest record
     if (selectedTrainId) {
       const records = trainData[selectedTrainId];
-      setSingleTrain(records && records.length > 0 ? records[0] : null);
+      setSingleTrainData(
+        records && records.length > 0 ? { [selectedTrainId]: records } : null
+      );
       return;
     }
 
@@ -36,20 +43,25 @@ export default function useSingleTrain(): {
     const movingTrain = Object.entries(trainData).find(
       ([, records]) =>
         records.length > 3 &&
-        records[0].destinationName === "Shenfield Rail Station" &&
+        records[0].destinationName.toLowerCase().includes("stratford") &&
         records[0].timeToStation <= Date.now() + 60000 // arriving in the next minute
     );
 
-    if (movingTrain) {
-      setSelectedTrainId((prev) => prev ?? movingTrain[0]);
-      setSingleTrain(movingTrain[1][0]);
-      console.log("set single train:", selectedTrainId);
-    } else {
-      // leave selectedTrainId alone (parent may have set it); clear singleTrain
-      setSingleTrain(null);
+    if (!movingTrain) {
+      setSingleTrainData(null);
       console.log("set single train:", "null");
+      return;
     }
+    const [trainId, trainRecords] = movingTrain;
+
+    setSelectedTrainId((prev) => prev ?? trainId);
+    setSingleTrainData({ [trainId]: trainRecords });
+    console.log("set single train:", selectedTrainId);
   }, [trainData, selectedTrainId]);
 
-  return { selectedTrainId, setSelectedTrainId, singleTrain };
+  return {
+    selectedTrainId,
+    setSelectedTrainId,
+    data: singleTrainData,
+  };
 }
