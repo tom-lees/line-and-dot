@@ -42,11 +42,11 @@ export const Label: React.FC<LabelProps> = ({
 
   return (
     <sprite
-      position={[position[0] + 100, position[1] + 40, position[2]]}
+      position={[position[0] + 100, position[1] - 80, position[2]]}
       scale={[200, 100, 1]}
     >
       <spriteMaterial
-        rotation={Math.PI / 6}
+        rotation={-Math.PI / 6}
         attach="material"
         map={texture}
         transparent

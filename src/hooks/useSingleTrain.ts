@@ -6,6 +6,7 @@ import useTrainData from "./useTrainData";
 // TODO Control the deletion of records from within a train record.
 // - 1) as new records come in, perhaps try the encyption thing and update when
 // record changes.
+// TODO Code broke when no 'Stratford' came up as destination.  Should have handled null/empty return
 /**
  * Locates a moving train on the Reading to Shenfield line.
  */
@@ -40,12 +41,14 @@ export default function useSingleTrain(): {
 
     // No explicit selection: auto-select the first matching train, but only when
     // nothing is already selected. This prevents re-selecting on every refresh.
-    const movingTrain = Object.entries(trainData).find(
-      ([, records]) =>
-        records.length > 3 &&
-        records[0].destinationName.toLowerCase().includes("stratford") &&
-        records[0].timeToStation <= Date.now() + 60000 // arriving in the next minute
-    );
+    const movingTrain = Object.entries(trainData)
+      .filter(([vehicleId]) => vehicleId !== "000")
+      .find(
+        ([, records]) =>
+          records.length > 3 &&
+          records[0].destinationName.toLowerCase().includes("shenfield") &&
+          records[0].timeToStation <= Date.now() + 60000 // arriving in the next minute
+      );
 
     if (!movingTrain) {
       setSingleTrainData(null);

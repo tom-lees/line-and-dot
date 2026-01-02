@@ -2,7 +2,7 @@
 import type { ApiRecord, TrainRecord } from "../types/train";
 import { parseApiRecord } from "../data/parseApiRecord";
 
-const API_URL = "https://api.tfl.gov.uk/Line/jubilee/Arrivals";
+const API_URL = "https://api.tfl.gov.uk/Line/elizabeth/Arrivals";
 const POLL_MS = 10000;
 
 type Subscriber = (data: Record<string, TrainRecord[]>) => void;
@@ -35,7 +35,7 @@ function upsertRecord(
 
 function cleanupExpired(trainList: Record<string, TrainRecord[]>) {
   const now = Date.now();
-  const shortExpiry = 60 * 1000;
+  const shortExpiry = 10 * 1000;
   const longExpiry = 30 * 60 * 1000;
   const cleaned: Record<string, TrainRecord[]> = {};
   for (const [vehicleId, records] of Object.entries(trainList)) {
@@ -115,14 +115,13 @@ export const trainService = (() => {
   const refresh = () => updateFromApi();
 
   const subscribe = (cb: Subscriber) => {
-
     subscribers.add(cb);
 
     // deliver immediate snapshot safely
     try {
-    cb({ ...store });
+      cb({ ...store });
     } catch (err) {
-      console.error('Subscriber threw during initial delivery:', err)
+      console.error("Subscriber threw during initial delivery:", err);
     }
 
     return () => subscribers.delete(cb);
