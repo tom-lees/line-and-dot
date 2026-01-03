@@ -1,18 +1,37 @@
-import { buildCurveData } from "./utils";
+import { buildCurveData, normaliseNetwork } from "./utils";
 import { Canvas } from "@react-three/fiber";
 import { Label } from "./components/Label";
 import { network } from "./components/trainLines";
 import { useMemo } from "react";
 import useSingleTrain from "./hooks/useSingleTrain";
 import { ApiSummary } from "./dev/ApiSummary";
+import { SingleTrainRecordTable } from "./dev/SingleTrainRecordTable";
+import { TrainDot } from "./components/TrainDot";
+
+// TODO Add screenwidth tracker
+const screenWidth = 1000;
 
 export default function App() {
-  const { selectedTrainId, data: singleTrainData } = useSingleTrain();
-
-  const { curve, linePoints, labelPositions } = useMemo(
-    () => buildCurveData(network.elizabeth.subsections[0].stations, 1000, 400),
+  const normalisedNetwork = useMemo(
+    () => normaliseNetwork(network, screenWidth),
+    // TODO add screenwidth when it can be adjusted
     []
   );
+
+  const { selectedTrainId, data: singleTrainData } = useSingleTrain();
+
+  const stationList = normalisedNetwork.elizabeth.subsections[0].stations;
+
+  //TODO Runs four similar scripts that should be consolidated.
+  const { curve, linePoints, labelPositions, stationUs } = useMemo(
+    () => buildCurveData(stationList),
+    [stationList]
+  );
+
+  // TODO Create <TrainDot> tsx
+  // const dot = useMemo(() => {
+  //   return new Dot("veh-1", curve, stationUs, 0.01);
+  // }, [curve, stationUs]);
 
   const cameraZ = useMemo(() => {
     const xs: number[] = [];
@@ -40,7 +59,7 @@ export default function App() {
               style={{ width: "100%", height: "100%" }}
             >
               <color attach="background" args={["#0c0c0f"]} />
-              {/* declarative line: R3F will handle creation/disposal */}
+              {/* Track line */}
               <line>
                 <bufferGeometry>
                   <bufferAttribute
@@ -55,6 +74,7 @@ export default function App() {
                 {/* set color/linewidth here — material props control the look */}
                 <lineBasicMaterial color={"#ffffff"} linewidth={2} />
               </line>
+              {/* Station labels */}
               {labelPositions.map((lp, i) => (
                 <Label
                   key={i.toString() + lp.label}
@@ -62,6 +82,17 @@ export default function App() {
                   position={lp.position}
                 />
               ))}
+              {/* Train dot moving along line */}
+              {/* Single moving train dot */}
+              {singleTrainData && (
+                <TrainDot
+                  curve={curve}
+                  stations={stationUs}
+                  speed={0.01}
+                  trainUpdates={Object.values(singleTrainData).flat()}
+                  initialU={0}
+                />
+              )}
             </Canvas>
           </div>
         </div>
@@ -71,64 +102,14 @@ export default function App() {
           <div className="p-2">
             {import.meta.env.DEV && <ApiSummary />}
             {selectedTrainId ? (
-              <div className="flex flex-col">
-                <span>
-                  <strong>Selected train ID</strong>: {selectedTrainId}
-                </span>
-                <span>
-                  <div className="overflow-x-auto">
-                    {singleTrainData &&
-                      Object.entries(singleTrainData).map(
-                        ([vehicleId, records]) => (
-                          <div key={vehicleId} className="mt-2 mb-4">
-                            <div className="border rounded">
-                              <table className="min-w-full rounded text-sm text-left text-gray-700">
-                                <thead className="bg-gray-100 sticky top-0">
-                                  <tr>
-                                    <th className="px-3 py-2">Train ID</th>
-                                    <th className="px-3 py-2">
-                                      Time To Station
-                                    </th>
-                                    <th className="px-3 py-2">Current Time</th>
-                                    <th className="px-3 py-2">Time To Live</th>
-                                    <th className="px-3 py-2">Station</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {records.map((record) => (
-                                    <tr
-                                      key={record.id}
-                                      className="even:bg-gray-50"
-                                    >
-                                      <td className="px-3 py-1 font-mono">
-                                        {record.vehicleId}
-                                      </td>
-                                      <td className="px-3 py-1 font-mono">
-                                        {record.timeToStation}
-                                      </td>
-                                      <td className="px-3 py-1 font-mono">
-                                        {new Date().toLocaleTimeString()}
-                                      </td>
-                                      <td className="px-3 py-1 font-mono">
-                                        {new Date(
-                                          Number(record.timeToLive)
-                                        ).toLocaleTimeString()}
-                                      </td>
-
-                                      <td className="px-3 py-1 font-mono">
-                                        {record.stationName}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )
-                      )}
-                  </div>
-                </span>
-              </div>
+              <>
+                {selectedTrainId && singleTrainData && (
+                  <SingleTrainRecordTable
+                    trainId={selectedTrainId}
+                    trainData={singleTrainData}
+                  />
+                )}
+              </>
             ) : (
               <span>Null</span>
             )}

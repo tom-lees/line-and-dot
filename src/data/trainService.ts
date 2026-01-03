@@ -3,7 +3,7 @@ import type { ApiRecord, TrainRecord } from "../types/train";
 import { parseApiRecord } from "../data/parseApiRecord";
 
 const API_URL = "https://api.tfl.gov.uk/Line/elizabeth/Arrivals";
-const POLL_MS = 10000;
+const POLL_MS = 5000;
 
 type Subscriber = (data: Record<string, TrainRecord[]>) => void;
 
@@ -15,7 +15,7 @@ function upsertRecord(
   const copy = records.slice();
   const idx = copy.findIndex((r) => r.id === newEntry.id);
 
-  const isTrainFarAway = newEntry.expectedArrival - now > 30 * 60 * 1000;
+  const isTrainFarAway = newEntry.expectedArrival - now > 10 * 60 * 1000;
 
   if (idx === -1) {
     // new record

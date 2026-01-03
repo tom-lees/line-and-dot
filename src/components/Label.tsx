@@ -31,7 +31,7 @@ export const Label: React.FC<LabelProps> = ({
     // TODO Shape of box needs udjusting, test with below
     // context.fillStyle = "red";
     // context.fillRect(0, 0, height, width);
-    context.font = "48px Arial";
+    context.font = "32px Arial";
     context.fillStyle = colour;
     context.textAlign = "left";
     context.textBaseline = "middle";
@@ -42,7 +42,7 @@ export const Label: React.FC<LabelProps> = ({
 
   return (
     <sprite
-      position={[position[0] + 100, position[1] - 80, position[2]]}
+      position={[position[0] + 90, position[1] - 60, position[2]]}
       scale={[200, 100, 1]}
     >
       <spriteMaterial
