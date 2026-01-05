@@ -81,7 +81,7 @@ export default function App() {
                   key={i.toString() + lp.label}
                   text={lp.label}
                   position={lp.position}
-                  fontSize={16}
+                  fontSize={10}
                   fontColour="white"
                 />
               ))}
@@ -91,8 +91,9 @@ export default function App() {
                 <TrainDot
                   curve={curve}
                   stations={stationUs}
-                  speed={0.01}
-                  trainUpdates={Object.values(singleTrainData).flat()}
+                  speed={0.0001}
+                  //TODO Change to arrivals
+                  trainTimetable={Object.values(singleTrainData).flat()}
                   initialU={0}
                 />
               )}

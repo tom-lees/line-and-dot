@@ -12,13 +12,13 @@ type StationU = {
 export const TrainDot = ({
   curve,
   stations,
-  trainUpdates, // dynamic array, top entry = next station
+  trainTimetable, // dynamic array, top entry = next station
   speed = 0.01,
   initialU = 0,
 }: {
   curve: CatmullRomCurve3;
   stations: StationU[];
-  trainUpdates: TrainRecord[];
+  trainTimetable: TrainRecord[];
   speed?: number;
   initialU?: number;
 }) => {
@@ -35,20 +35,34 @@ export const TrainDot = ({
   useFrame(() => {
     const s = state.current;
 
-    if (!stations.length || !trainUpdates.length) return;
+    if (!stations.length || !trainTimetable.length) return;
 
     // The next station is always the top entry in trainUpdates
-    const nextUpdate = trainUpdates[0];
-    const nextLabel = nextUpdate.stationName;
-
+    const nextArrival = trainTimetable[0];
+    const nextStation = nextArrival.stationName
+      .toLowerCase()
+      .replace(/rail station/g, "")
+      .trim();
     // Find the u coordinate of that station
-    const nextStation = stations.find((st) => st.label === nextLabel);
-    if (!nextStation) return;
+    console.log("stations list", stations);
+    console.log("next station", nextStation);
+
+    const nextStationArrivalRecord = stations.find(
+      (st) => st.label.toLowerCase().trim() === nextStation
+    );
+    if (!nextStationArrivalRecord) {
+      console.log(
+        "not next station U, EXIT",
+        nextStationArrivalRecord,
+        nextStation
+      );
+      return;
+    }
 
     // If the target changed, start moving toward it
-    if (s.targetLabel !== nextLabel) {
-      s.targetU = nextStation.u;
-      s.targetLabel = nextLabel;
+    if (s.targetLabel !== nextStation) {
+      s.targetU = nextStationArrivalRecord.u;
+      s.targetLabel = nextStation;
       s.moving = true;
     }
 
@@ -59,7 +73,7 @@ export const TrainDot = ({
       if (s.u >= s.targetU) {
         s.u = s.targetU;
         s.moving = false;
-        console.log(`Arrived at ${nextLabel}`);
+        console.log(`Arrived at ${nextStation}`);
       }
     }
 

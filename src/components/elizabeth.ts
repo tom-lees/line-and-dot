@@ -1,4 +1,4 @@
-import type { Station  } from "./trainLines";
+import type { Station } from "./trainLines";
 
 export const reading_shenfield: Station[] = [
   { name: "Reading", x: 471456.4223, y: 173854.3511 },
@@ -22,7 +22,7 @@ export const reading_shenfield: Station[] = [
   { name: "Farringdon", x: 531762.9134, y: 181817.2675 },
   { name: "Liverpool Street", x: 532851.5216, y: 181597.8254 },
   { name: "Whitechapel", x: 534734.8138, y: 181931.0482 },
-  { name: "Stratford", x: 538511.1599, y: 184391.983 },
+  { name: "Stratford (London)", x: 538511.1599, y: 184391.983 },
   { name: "Maryland", x: 539193.9472, y: 184915.7486 },
   { name: "Forest Gate", x: 540409.114, y: 185311.6264 },
   { name: "Manor Park", x: 541906.0795, y: 185683.2403 },
