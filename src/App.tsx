@@ -7,6 +7,7 @@ import useSingleTrain from "./hooks/useSingleTrain";
 import { ApiSummary } from "./dev/ApiSummary";
 import { SingleTrainRecordTable } from "./dev/SingleTrainRecordTable";
 import { TrainDot } from "./components/TrainDot";
+import { OrbitControls } from "@react-three/drei";
 
 // TODO Add screenwidth tracker
 const screenWidth = 1000;
@@ -80,6 +81,8 @@ export default function App() {
                   key={i.toString() + lp.label}
                   text={lp.label}
                   position={lp.position}
+                  fontSize={16}
+                  fontColour="white"
                 />
               ))}
               {/* Train dot moving along line */}
@@ -93,6 +96,18 @@ export default function App() {
                   initialU={0}
                 />
               )}
+              {/* TODO  Pan, 1 finger, left mouse.  Drag, 2 finger, right mouse.  Zoom, pinch, wheel  */}
+              <OrbitControls
+                enablePan
+                enableZoom
+                enableRotate={true}
+                enableDamping
+                dampingFactor={0.08}
+                minDistance={cameraZ * 0.3}
+                maxDistance={cameraZ * 2}
+                minPolarAngle={Math.PI / 2}
+                maxPolarAngle={Math.PI / 2}
+              />
             </Canvas>
           </div>
         </div>
