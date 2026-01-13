@@ -1,15 +1,24 @@
-import { reading_shenfield } from "./elizabeth";
-import { stanmore_stratford } from "./jubilee";
+import {
+  heathrow4_shenfield,
+  heathrow5_heathrow2and3,
+  reading_shenfield,
+} from "../data/elizabeth";
+import type { buildCurveData } from "../utils";
 
-export type Station = {
-  name: string;
-  x: number;
-  y: number;
-};
+export type Positions =
+  | {
+      type: "station";
+      name: string;
+      x: number;
+      y: number;
+      z: number;
+    }
+  | { type: "track"; x: number; y: number; z: number };
 
 export type Subsection = {
   name: string; // e.g. "Reading → Shenfield"
-  stations: Station[]; // ordered list of stations in this subsection
+  positions: Positions[]; // ordered list of positions along the line
+  curveData?: ReturnType<typeof buildCurveData>;
 };
 
 // TODO Change to TrainLine
@@ -26,16 +35,9 @@ export const network: Network = {
   elizabeth: {
     name: "Elizabeth",
     subsections: [
-      { name: "Reading => Shenfield", stations: reading_shenfield },
-    ],
-  },
-  jubilee: {
-    name: "Jubilee",
-    subsections: [
-      {
-        name: "Stanmore => Stratford",
-        stations: stanmore_stratford,
-      },
+      { name: "Reading => Shenfield", positions: reading_shenfield },
+      { name: "Heathrow 4 => Shenfield", positions: heathrow4_shenfield },
+      { name: "Heathrow 5 => Shenfield", positions: heathrow5_heathrow2and3 },
     ],
   },
 };

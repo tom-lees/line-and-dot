@@ -1,4 +1,4 @@
-import type { Station } from "./trainLines";
+import type { Station } from "../components/trainLines";
 
 export const stanmore_stratford: Station[] = [
   { name: "Stanmore", x: 517200, y: 193500 },

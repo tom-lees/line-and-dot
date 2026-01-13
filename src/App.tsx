@@ -1,6 +1,5 @@
 import { buildCurveData, normaliseNetwork } from "./utils";
 import { Canvas } from "@react-three/fiber";
-import { Label } from "./components/Label";
 import { network } from "./components/trainLines";
 import { useMemo } from "react";
 import useSingleTrain from "./hooks/useSingleTrain";
@@ -8,6 +7,7 @@ import { ApiSummary } from "./dev/ApiSummary";
 import { SingleTrainRecordTable } from "./dev/SingleTrainRecordTable";
 import { TrainDot } from "./components/TrainDot";
 import { OrbitControls } from "@react-three/drei";
+import { Elizabeth } from "./components/Elizabeth";
 
 // TODO Add screenwidth tracker
 const screenWidth = 1000;
@@ -21,34 +21,17 @@ export default function App() {
 
   const { selectedTrainId, data: singleTrainData } = useSingleTrain();
 
-  const stationList = normalisedNetwork.elizabeth.subsections[0].stations;
+  const elizabethStations = normalisedNetwork.elizabeth.subsections[0].positions;
 
   //TODO Runs four similar scripts that should be consolidated.
-  const { curve, linePoints, labelPositions, stationUs } = useMemo(
-    () => buildCurveData(stationList),
-    [stationList]
+  const { curve, stationUs } = useMemo(
+    () => buildCurveData(elizabethStations),
+    [elizabethStations]
   );
 
-  // TODO Create <TrainDot> tsx
-  // const dot = useMemo(() => {
-  //   return new Dot("veh-1", curve, stationUs, 0.01);
-  // }, [curve, stationUs]);
-
   const cameraZ = useMemo(() => {
-    const xs: number[] = [];
-    const ys: number[] = [];
-    for (let i = 0; i < linePoints.length; i += 3) {
-      xs.push(linePoints[i]);
-      ys.push(linePoints[i + 1]);
-    }
-    const span = Math.max(
-      Math.max(...xs) - Math.min(...xs),
-      Math.max(...ys) - Math.min(...ys),
-      100
-    );
-    // TODO why does jubilee need span = 1 and eliz span = 0.5
-    return span * 0.5;
-  }, [linePoints]);
+    return screenWidth * 0.5;
+  }, []);
 
   return (
     <>
@@ -60,38 +43,12 @@ export default function App() {
               style={{ width: "100%", height: "100%" }}
             >
               <color attach="background" args={["#0c0c0f"]} />
-              {/* Track line */}
-              <line>
-                <bufferGeometry>
-                  <bufferAttribute
-                    attach={"attributes-position"}
-                    array={linePoints as Float32Array}
-                    args={[linePoints as Float32Array, 3]}
-                    itemSize={3}
-                    count={linePoints.length / 3}
-                  />
-                </bufferGeometry>
-
-                {/* set color/linewidth here — material props control the look */}
-                <lineBasicMaterial color={"#ffffff"} linewidth={2} />
-              </line>
-              {/* Station labels */}
-              {labelPositions.map((lp, i) => (
-                <Label
-                  key={i.toString() + lp.label}
-                  text={lp.label}
-                  position={lp.position}
-                  fontSize={10}
-                  fontColour="white"
-                />
-              ))}
-              {/* Train dot moving along line */}
-              {/* Single moving train dot */}
+              <Elizabeth network={normalisedNetwork} />
               {singleTrainData && (
                 <TrainDot
                   curve={curve}
                   stations={stationUs}
-                  speed={0.0001}
+                  speed={0.001}
                   //TODO Change to arrivals
                   trainTimetable={Object.values(singleTrainData).flat()}
                   initialU={0}
@@ -104,8 +61,8 @@ export default function App() {
                 enableRotate={true}
                 enableDamping
                 dampingFactor={0.08}
-                minDistance={cameraZ * 0.3}
-                maxDistance={cameraZ * 2}
+                minDistance={cameraZ * 0.1}
+                maxDistance={cameraZ * 5}
                 minPolarAngle={Math.PI / 2}
                 maxPolarAngle={Math.PI / 2}
               />

@@ -39,16 +39,30 @@ export default function useSingleTrain(): {
       return;
     }
 
-    // No explicit selection: auto-select the first matching train, but only when
-    // nothing is already selected. This prevents re-selecting on every refresh.
-    const movingTrain = Object.entries(trainData)
+    const matchingTrains = Object.entries(trainData)
       .filter(([vehicleId]) => vehicleId !== "000")
-      .find(
+      .filter(
         ([, records]) =>
           records.length > 3 &&
           records[0].destinationName.toLowerCase().includes("shenfield") &&
-          records[0].timeToStation <= Date.now() + 60000 // arriving in the next minute
+          records[0].timeToStation <= Date.now() + 60_000
       );
+
+    const movingTrain =
+      matchingTrains.length > 0
+        ? matchingTrains[Math.floor(Math.random() * matchingTrains.length)]
+        : undefined;
+
+    // // No explicit selection: auto-select the first matching train, but only when
+    // // nothing is already selected. This prevents re-selecting on every refresh.
+    // const movingTrain = Object.entries(trainData)
+    //   .filter(([vehicleId]) => vehicleId !== "000")
+    //   .find(
+    //     ([, records]) =>
+    //       records.length > 3 &&
+    //       records[0].destinationName.toLowerCase().includes("shenfield") &&
+    //       records[0].timeToStation <= Date.now() + 60000 // arriving in the next minute
+    //   );
 
     if (!movingTrain) {
       setSingleTrainData(null);
