@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const trainLines = ["jubilee", "elizabeth"];
+const trainLines = ["elizabeth"];
 const apiUrlStart = "https://api.tfl.gov.uk/Line/";
 const apiUrlEnd = "/Arrivals";
 

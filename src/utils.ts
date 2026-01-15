@@ -1,5 +1,7 @@
 import * as THREE from "three";
-import type { Network, Positions } from "./components/trainLines";
+import Fuse from "fuse.js";
+import type { Network, Positions, Subsection } from "./components/trainLines";
+import type { TrainRecord } from "./types/train";
 
 // TODO This whole ts needs a comb over.
 export function normaliseNetwork(
@@ -83,7 +85,73 @@ export function buildCurveData(positions: Positions[]) {
     Positions,
     { type: "station" }
   >[];
-  const stationUs = calculateStationUs(curve, stations);
+
+  const stationUs = calculateStationUs(curve, stations).map((s) => ({
+    ...s,
+    normalisedLabel: normalise(s.label),
+  }));
 
   return { curve, stationUs };
 }
+
+export function matchTrainToLineSubsection(
+  trainRecord: TrainRecord,
+  subsection: Subsection
+): THREE.CatmullRomCurve3 {
+  return subsection.curveData?.curve as THREE.CatmullRomCurve3;
+}
+
+export type StationU = {
+  label: string;
+  normalisedLabel: string;
+  u: number;
+  t?: number;
+};
+
+export type SubsectionRuntime = Subsection & {
+  curveData: {
+    curve: THREE.CatmullRomCurve3;
+    stationUs: StationU[];
+  };
+  stationMatcher: (stationName: string) => StationU | undefined;
+};
+
+export const normalise = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/rail station|station/g, "")
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+export const createStationMatcher = (stations: StationU[]) => {
+  const fuse = new Fuse(stations, {
+    keys: ["normalisedLabel"],
+    threshold: 0.3,
+    ignoreLocation: true,
+    getFn: (obj, path) => normalise(obj[path as keyof StationU] as string),
+  });
+
+  return (stationName: string): StationU | undefined => {
+    console.log("Matching station:", stationName);
+    const results = fuse.search(stationName);
+    console.log(
+      "Fuse results:",
+      results.map((r) => ({ label: r.item.label, score: r.score }))
+    );
+
+    if (!results.length) return undefined;
+    const [best, second] = results;
+    if (
+      second &&
+      best.score !== undefined &&
+      second.score !== undefined &&
+      best.score > second.score * 0.85
+    ) {
+      console.log("Ambiguous match, returning undefined");
+      return undefined;
+    }
+    console.log("Matched:", best.item.label);
+    return best.item;
+  };
+};

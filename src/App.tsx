@@ -1,13 +1,12 @@
-import { buildCurveData, normaliseNetwork } from "./utils";
+import { normaliseNetwork } from "./utils";
 import { Canvas } from "@react-three/fiber";
 import { network } from "./components/trainLines";
 import { useMemo } from "react";
-import useSingleTrain from "./hooks/useSingleTrain";
 import { ApiSummary } from "./dev/ApiSummary";
-import { SingleTrainRecordTable } from "./dev/SingleTrainRecordTable";
-import { TrainDot } from "./components/TrainDot";
 import { OrbitControls } from "@react-three/drei";
 import { Elizabeth } from "./components/Elizabeth";
+import { TrainRecordsTable } from "./dev/TrainRecordsTable";
+import useTrainData from "./hooks/useTrainData";
 
 // TODO Add screenwidth tracker
 const screenWidth = 1000;
@@ -19,15 +18,15 @@ export default function App() {
     []
   );
 
-  const { selectedTrainId, data: singleTrainData } = useSingleTrain();
-
-  const elizabethStations = normalisedNetwork.elizabeth.subsections[0].positions;
+  const trains = useTrainData();
+  // const elizabethStations =
+  //   normalisedNetwork.elizabeth.subsections[0].positions;
 
   //TODO Runs four similar scripts that should be consolidated.
-  const { curve, stationUs } = useMemo(
-    () => buildCurveData(elizabethStations),
-    [elizabethStations]
-  );
+  // const { curve, stationUs } = useMemo(
+  //   () => buildCurveData(elizabethStations),
+  //   [elizabethStations]
+  // );
 
   const cameraZ = useMemo(() => {
     return screenWidth * 0.5;
@@ -44,16 +43,6 @@ export default function App() {
             >
               <color attach="background" args={["#0c0c0f"]} />
               <Elizabeth network={normalisedNetwork} />
-              {singleTrainData && (
-                <TrainDot
-                  curve={curve}
-                  stations={stationUs}
-                  speed={0.001}
-                  //TODO Change to arrivals
-                  trainTimetable={Object.values(singleTrainData).flat()}
-                  initialU={0}
-                />
-              )}
               {/* TODO  Pan, 1 finger, left mouse.  Drag, 2 finger, right mouse.  Zoom, pinch, wheel  */}
               <OrbitControls
                 enablePan
@@ -74,15 +63,8 @@ export default function App() {
         <div className=" border rounded-md h-[400px] overflow-y-auto overflow-x-hidden">
           <div className="p-2">
             {import.meta.env.DEV && <ApiSummary />}
-            {selectedTrainId ? (
-              <>
-                {selectedTrainId && singleTrainData && (
-                  <SingleTrainRecordTable
-                    trainId={selectedTrainId}
-                    trainData={singleTrainData}
-                  />
-                )}
-              </>
+            {trains ? (
+              <TrainRecordsTable trainData={trains.trainData} />
             ) : (
               <span>Null</span>
             )}

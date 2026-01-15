@@ -1,9 +1,8 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import * as THREE from "three";
-import type { CatmullRomCurve3 } from "three";
 import type { TrainRecord } from "../types/train";
-import Fuse from "fuse.js";
+import { normalise, type SubsectionRuntime } from "../utils";
 
 // TODO Add starting station
 // TODO Logic for times between stations and train velocities
@@ -12,163 +11,235 @@ import Fuse from "fuse.js";
 // TODO Popup or console log/error when there is not a station match.
 // TODO This is running at 60 frames per second... but what if somes cpu ain't
 
-let stationNameTest: string;
-
-type StationU = {
-  label: string;
-  u: number;
-  t?: number;
-};
-
-const normalise = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/rail station|station/g, "")
-    .replace(/[^a-z0-9 ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const createStationMatcher = (stations: StationU[]) => {
-  const fuse = new Fuse(stations, {
-    keys: ["label"],
-    threshold: 0.3,
-    ignoreLocation: true,
-    getFn: (obj, path) => normalise(obj[path as keyof StationU] as string),
-  });
-
-  return (stationName: string): StationU => {
-    if (!stationName || !stations.length) {
-      return stations[0];
-    }
-
-    const results = fuse.search(stationName);
-
-    if (!results.length) {
-      return stations[0];
-    }
-
-    const [best, second] = results;
-
-    // Confidence gate: best must clearly win
-    if (
-      second &&
-      best.score !== undefined &&
-      second.score !== undefined &&
-      best.score > second.score * 0.85
-    ) {
-      // ambiguous → fallback
-      return stations[0];
-    }
-
-    return best.item;
-  };
-};
+function findSubsectionForNextStations(
+  nextName: string,
+  followingName: string,
+  subsections: SubsectionRuntime[]
+) {
+  return subsections
+    .map((sub) => {
+      const next = sub.stationMatcher(nextName);
+      const following = sub.stationMatcher(followingName);
+      if (!next || !following) return null;
+      if (next.u >= following.u) return null;
+      return { subsection: sub, next, following };
+    })
+    .filter(Boolean)[0]; // first valid match
+}
 
 export const TrainDot = ({
-  curve,
-  stations,
-  trainTimetable, // dynamic array, top entry = next station
+  subsections,
+  trainTimetable,
   speed = 0.01,
-  initialU = 0,
 }: {
-  curve: CatmullRomCurve3;
-  stations: StationU[];
+  subsections: SubsectionRuntime[];
   trainTimetable: TrainRecord[];
   speed?: number;
-  initialU?: number;
-}): JSX.Element => {
-  const meshRef = useRef<THREE.Mesh>(null!);
+}): JSX.Element | null => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const uRef = useRef(0);
+  const targetURef = useRef(0);
 
-  const stationMatcher = useMemo(() => {
-    // console.log(
-    //   "Stations normalised for matching:",
-    //   stations.map((s) => ({
-    //     original: s.label,
-    //     normalised: normalise(s.label),
-    //     u: s.u,
-    //   }))
-    // );
-    return createStationMatcher(stations);
-  }, [stations]);
-
-  const initialStation = useMemo(() => {
-    if (!trainTimetable.length) return stations[0];
-    const matchedStation = stationMatcher(
-      normalise(trainTimetable[0].stationName)
-    );
-
-    return {
-      ...matchedStation,
-      t: trainTimetable[0].expectedArrival,
-    };
-  }, []);
-
-  const state = useRef({
-    u: initialStation.u,
-    targetU: initialStation.u,
-    t: new Date().getTime(),
-    targetT: initialStation.t,
-    // TODO Estimate initial speed and initial position.
-    speed: speed,
-    moving: false,
-    targetLabel: initialStation.label,
-    ready: false,
-  });
+  const [activeSubsection, setActiveSubsection] =
+    useState<SubsectionRuntime | null>(null);
 
   useEffect(() => {
-    if (!trainTimetable.length) return;
+    if (trainTimetable.length < 2) return;
 
-    const nextStation = stationMatcher(
-      normalise(trainTimetable[0].stationName)
+    const nextName = normalise(trainTimetable[0].stationName);
+    const followingName = normalise(trainTimetable[1].stationName);
+
+    const matchResult = findSubsectionForNextStations(
+      nextName,
+      followingName,
+      subsections
     );
-    stationNameTest =
-      "timetable: " +
-      trainTimetable[0].stationName +
-      " | next station matcher: " +
-      nextStation.label;
 
-    state.current.targetU = nextStation.u;
-    state.current.targetLabel = nextStation.label;
-    state.current.moving = true;
-    state.current.targetT = trainTimetable[0].expectedArrival;
-    state.current.speed =
-      (nextStation.u - state.current.u) /
-      ((trainTimetable[0].expectedArrival - new Date().getTime()) / 1000);
-  }, [trainTimetable, stationMatcher]);
-
-  useEffect(() => {
-    // console.log(stationNameTest);
-  }, [stationNameTest]);
-
-  useFrame((_, delta) => {
-    const s = state.current;
-
-    if (!stations.length || !trainTimetable.length) return;
-
-    if (!s.moving && s.targetU > s.u) {
-      s.moving = true;
+    if (!matchResult) {
+      console.warn(
+        "No matching subsection found for stations:",
+        nextName,
+        "→",
+        followingName
+      );
+      return;
     }
 
-    if (s.moving) {
-      // console.log("moving: ", s.moving);
-      s.u += s.speed * delta;
-      // console.log("state u: ", s.u, s.speed, delta);
+    console.log("Matched subsection:", matchResult.subsection.name);
+    console.log(
+      `Next: ${matchResult.next.label} (u=${matchResult.next.u}) → Following: ${matchResult.following.label} (u=${matchResult.following.u})`
+    );
 
-      if (s.u >= s.targetU) {
-        // console.log("reached target", s.u, ">=", s.targetU);
-        s.u = s.targetU;
-        s.moving = false;
-      }
+    setActiveSubsection(matchResult.subsection);
+
+    // Set targetU to the next station's u
+    targetURef.current = matchResult.next.u;
+  }, [trainTimetable, subsections]);
+
+  useFrame(() => {
+    if (!meshRef.current) return;
+    if (!activeSubsection) {
+      console.warn("Active subsection not set yet");
+      return;
+    }
+    if (!activeSubsection.curveData) {
+      console.warn(
+        "Active subsection has no curve data:",
+        activeSubsection.name
+      );
+      return;
     }
 
-    const pos = curve.getPointAt(THREE.MathUtils.clamp(s.u, 0, 1));
-    meshRef.current.position.copy(pos);
+    const delta = targetURef.current - uRef.current;
+    const step = Math.sign(delta) * Math.min(Math.abs(delta), speed);
+    uRef.current += step;
+
+    // Clamp u between 0 and 1 for safety
+    uRef.current = Math.min(Math.max(uRef.current, 0), 1);
+
+    const pos = activeSubsection.curveData.curve.getPointAt(uRef.current);
+    meshRef.current.position.set(pos.x, pos.y, pos.z);
+
+    // Optional: log position every 10 frames to avoid spamming
+    if (Math.floor(performance.now() / 100) % 10 === 0) {
+      console.log(
+        `TrainDot at u=${uRef.current.toFixed(3)}, pos=(${pos.x.toFixed(
+          1
+        )},${pos.y.toFixed(1)},${pos.z.toFixed(1)})`
+      );
+    }
   });
+
+  if (!activeSubsection) return null;
 
   return (
-    <mesh ref={meshRef} position={curve.getPointAt(initialU)}>
-      <sphereGeometry args={[3, 100, 100]} />
-      <meshBasicMaterial color="#ff0000" />
+    <mesh ref={meshRef}>
+      <sphereGeometry args={[2, 16, 16]} />
+      <meshBasicMaterial color="red" />
     </mesh>
   );
 };
+
+//   // Use trainTimetable to find which curve the the dot is on.
+//   // trainTimetable: TrainRecord[]
+//   // (alias) type TrainRecord = {
+//   //     id: string;
+//   //     destinationName: string;
+//   //     direction: string;
+//   //     expectedArrival: number;
+//   //     lineId: string;
+//   //     stationName: string;
+//   //     timeCreate: number;
+//   //     timeEdit: number;
+//   //     timeToLive: number;
+//   //     timeToStation: number;
+//   //     vehicleId: string;
+//   //
+//   // This will involve matching the first and next station names to the network/lines/segments
+//   // We will then have the curve and the stationUs for that segment.
+//   // We will then have the current u and next u for the train dot to move between.
+//   //
+//   // If the next station is not found in the network, we need to need to recalculate the curve it is on.
+
+//   const { curve, stationUs } = useMemo(() => {
+//     // Use the trainTimetable to find the next station name
+//     if (!trainTimetable.length) return
+//     const nextStationName = trainTimetable[0].stationName;
+//     const nextStationTime = trainTimetable[0].expectedArrival;
+
+//     const match = matchTrainToCurve(nextStationName, network);
+
+//   const stationMatcher = useMemo(() => {
+//     // console.log(
+//     //   "Stations normalised for matching:",
+//     //   stations.map((s) => ({
+//     //     original: s.label,
+//     //     normalised: normalise(s.label),
+//     //     u: s.u,
+//     //   }))
+//     // );
+
+//     return createStationMatcher(stations);
+//   }, [stations]);
+
+//   const initialStation = useMemo(() => {
+//     if (!trainTimetable.length) return stations[0];
+//     const matchedStation = stationMatcher(
+//       normalise(trainTimetable[0].stationName)
+//     );
+
+//     return {
+//       ...matchedStation,
+//       t: trainTimetable[0].expectedArrival,
+//     };
+//   }, []);
+
+//   const state = useRef({
+//     u: initialStation.u,
+//     targetU: initialStation.u,
+//     t: new Date().getTime(),
+//     targetT: initialStation.t,
+//     // TODO Estimate initial speed and initial position.
+//     speed: speed,
+//     moving: false,
+//     targetLabel: initialStation.label,
+//     ready: false,
+//   });
+
+//   useEffect(() => {
+//     if (!trainTimetable.length) return;
+
+//     const nextStation = stationMatcher(
+//       normalise(trainTimetable[0].stationName)
+//     );
+//     stationNameTest =
+//       "timetable: " +
+//       trainTimetable[0].stationName +
+//       " | next station matcher: " +
+//       nextStation.label;
+
+//     state.current.targetU = nextStation.u;
+//     state.current.targetLabel = nextStation.label;
+//     state.current.moving = true;
+//     state.current.targetT = trainTimetable[0].expectedArrival;
+//     state.current.speed =
+//       (nextStation.u - state.current.u) /
+//       ((trainTimetable[0].expectedArrival - new Date().getTime()) / 1000);
+//   }, [trainTimetable, stationMatcher]);
+
+//   useEffect(() => {
+//     // console.log(stationNameTest);
+//   }, [stationNameTest]);
+
+//   useFrame((_, delta) => {
+//     const s = state.current;
+
+//     if (!stations.length || !trainTimetable.length) return;
+
+//     if (!s.moving && s.targetU > s.u) {
+//       s.moving = true;
+//     }
+
+//     if (s.moving) {
+//       // console.log("moving: ", s.moving);
+//       s.u += s.speed * delta;
+//       // console.log("state u: ", s.u, s.speed, delta);
+
+//       if (s.u >= s.targetU) {
+//         // console.log("reached target", s.u, ">=", s.targetU);
+//         s.u = s.targetU;
+//         s.moving = false;
+//       }
+//     }
+
+//     const pos = curve.getPointAt(THREE.MathUtils.clamp(s.u, 0, 1));
+//     meshRef.current.position.copy(pos);
+//   });
+
+//   return (
+//     <mesh ref={meshRef} position={curve.getPointAt(initialU)}>
+//       <sphereGeometry args={[3, 100, 100]} />
+//       <meshBasicMaterial color="#ff0000" />
+//     </mesh>
+//   );
+// };

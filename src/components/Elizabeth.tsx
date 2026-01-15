@@ -1,6 +1,10 @@
-import { useEffect, useMemo, type JSX } from "react";
+import { useMemo, type JSX } from "react";
 import type { Network } from "./trainLines";
-import { buildCurveData } from "../utils";
+import {
+  buildCurveData,
+  createStationMatcher,
+  type SubsectionRuntime,
+} from "../utils";
 import { Label } from "./Label";
 import useTrainData from "../hooks/useTrainData";
 import { TrainDot } from "./TrainDot";
@@ -8,31 +12,20 @@ import { TrainDot } from "./TrainDot";
 export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
   const trains = useTrainData();
 
-  useEffect(() => {
-    // Get all the arrays of train records
-    const trainArrays = Object.values(trains.trainData);
-
-    if (trainArrays.length === 0) return;
-
-    // Take the first array
-    const firstTrainArray = trainArrays[0];
-
-    if (!firstTrainArray || firstTrainArray.length === 0) return;
-
-    // Take the first train record
-    const firstTrainRecord = firstTrainArray[0];
-
-    console.log("first train record:", firstTrainRecord);
-  }, [trains]);
-
   //
   // Generate Catmullcurve & stations' proportions (u) along the curve
   //
-  const elizabethCurves = useMemo(() => {
+  const elizabethSubsections: SubsectionRuntime[] = useMemo(() => {
     return network.elizabeth.subsections.map((subsection) => {
       const curveData = buildCurveData(subsection.positions);
-      subsection.curveData = curveData;
-      return curveData;
+
+      const runtime: SubsectionRuntime = {
+        ...subsection,
+        curveData,
+        stationMatcher: createStationMatcher(curveData.stationUs),
+      };
+
+      return runtime;
     });
   }, [network.elizabeth.subsections]);
 
@@ -40,25 +33,27 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
   // Curve to points for rendering line
   //
   const elizabethCurvesPoints = useMemo(() => {
-    return elizabethCurves.map(({ curve }) => {
+    return elizabethSubsections.map((s) => {
+      const curve = s.curveData.curve;
       return new Float32Array(
         curve.getPoints(200).flatMap((p) => [p.x, p.y, p.z])
       );
     });
-  }, [elizabethCurves]);
+  }, [elizabethSubsections]);
 
   //
   // Curve & Station positions for rendering labels
   //
   const elizabethLabelPositions = useMemo(() => {
-    // flatMap if you have multiple curves/subsections
-    return elizabethCurves.flatMap(({ curve, stationUs }) =>
-      stationUs.map((s) => ({
+    return elizabethSubsections.flatMap(({ curveData }) => {
+      const { curve, stationUs } = curveData;
+
+      return stationUs.map((s) => ({
         label: s.label,
         position: curve.getPointAt(s.u).toArray() as [number, number, number],
-      }))
-    );
-  }, [elizabethCurves]);
+      }));
+    });
+  }, [elizabethSubsections]);
 
   return (
     <>
@@ -85,16 +80,19 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
           fontColour="white"
         />
       ))}
-      {/* {trains && (
-                <TrainDot
-                  curve={curve}
-                  stations={stationUs}
-                  speed={0.001}
-                  //TODO Change to arrivals
-                  trainTimetable={Object.values(singleTrainData).flat()}
-                  initialU={0}
-                />
-              )} */}
+      {Object.entries(trains.trainData)
+        //TODO Filter for testing
+        .filter(([trainId]) => trainId === "202601157124173")
+        .map(
+          ([trainId, trainArrivalList]) =>
+            trainArrivalList.length > 0 && (
+              <TrainDot
+                key={trainId}
+                subsections={elizabethSubsections}
+                trainTimetable={trainArrivalList}
+              />
+            )
+        )}
     </>
   );
 };
