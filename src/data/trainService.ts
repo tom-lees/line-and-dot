@@ -10,7 +10,7 @@ type Subscriber = (data: Record<string, TrainRecord[]>) => void;
 function upsertRecord(
   newEntry: TrainRecord,
   records: TrainRecord[] = [],
-  now: number
+  now: number,
 ) {
   const copy = records.slice();
   const idx = copy.findIndex((r) => r.id === newEntry.id);
@@ -29,8 +29,36 @@ function upsertRecord(
     copy[idx] = newEntry;
   }
   return copy.sort(
-    (a, b) => a.expectedArrival - b.expectedArrival || a.id.localeCompare(b.id)
+    (a, b) => a.expectedArrival - b.expectedArrival || a.id.localeCompare(b.id),
   );
+}
+
+// TODO Check section
+const DUPLICATE_WINDOW_MS = 60 * 1000;
+
+function dedupeByTime(records: TrainRecord[]) {
+  const result: TrainRecord[] = [];
+
+  for (const rec of records.sort(
+    (a, b) => a.expectedArrival - b.expectedArrival,
+  )) {
+    const last = result[result.length - 1];
+
+    if (
+      last &&
+      Math.abs(rec.expectedArrival - last.expectedArrival) <=
+        DUPLICATE_WINDOW_MS
+    ) {
+      // Same arrival → keep the earlier one (or keep last, your choice)
+      if (rec.expectedArrival < last.expectedArrival) {
+        result[result.length - 1] = rec;
+      }
+    } else {
+      result.push(rec);
+    }
+  }
+
+  return result;
 }
 
 function cleanupExpired(trainList: Record<string, TrainRecord[]>) {
@@ -43,7 +71,7 @@ function cleanupExpired(trainList: Record<string, TrainRecord[]>) {
       const expiryWindow = records.length === 1 ? longExpiry : shortExpiry;
       const expiryTime = Math.max(
         entry.expectedArrival,
-        entry.timeEdit + expiryWindow
+        entry.timeEdit + expiryWindow,
       );
       return now <= expiryTime;
     });
@@ -68,7 +96,7 @@ export const trainService = (() => {
       }
     });
   };
-
+  // TODO Check new time filter
   const updateFromApi = async () => {
     try {
       const res = await fetch(API_URL);
@@ -84,13 +112,19 @@ export const trainService = (() => {
           store[vehicleId] = upsertRecord(
             newEntry,
             store[vehicleId] ?? [],
-            now
+            now,
           );
         } catch (e) {
           console.error("Parse error for row", e, row);
         }
       }
+
+      // after processing all API rows
+      for (const vehicleId of Object.keys(store)) {
+        store[vehicleId] = dedupeByTime(store[vehicleId]);
+      }
       store = cleanupExpired(store);
+
       emit();
     } catch (e) {
       console.error("trainService fetch error:", e);

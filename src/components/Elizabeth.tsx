@@ -8,7 +8,9 @@ import {
 import { Label } from "./Label";
 import useTrainData from "../hooks/useTrainData";
 import { TrainDot } from "./TrainDot";
-
+// TODO Hayes and Harington two labels overlaping.  drop one lablel.  Label on tag in data or component.
+// TODO Handle stations that reach an NA, they jump off the line, should remain at current u position.
+// TODO Paddington and London Paddington Rail Station breaks logic.
 export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
   const trains = useTrainData();
 
@@ -36,7 +38,7 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
     return elizabethSubsections.map((s) => {
       const curve = s.curveData.curve;
       return new Float32Array(
-        curve.getPoints(200).flatMap((p) => [p.x, p.y, p.z])
+        curve.getPoints(200).flatMap((p) => [p.x, p.y, p.z]),
       );
     });
   }, [elizabethSubsections]);
@@ -82,7 +84,7 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
       ))}
       {Object.entries(trains.trainData)
         //TODO Filter for testing
-        .filter(([trainId]) => trainId === "202601157124173")
+        // .filter(([trainId]) => trainId === "202601217124102")
         .map(
           ([trainId, trainArrivalList]) =>
             trainArrivalList.length > 0 && (
@@ -91,7 +93,7 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
                 subsections={elizabethSubsections}
                 trainTimetable={trainArrivalList}
               />
-            )
+            ),
         )}
     </>
   );

@@ -5,9 +5,15 @@ export const reading_shenfield: Positions[] = [
   { type: "station", name: "Twyford", x: 479053.0293, y: 175777.6775, z: 0 },
   { type: "station", name: "Maidenhead", x: 488713.4349, y: 180713.2754, z: 0 },
   { type: "station", name: "Taplow", x: 491596.3554, y: 181302.7585, z: 0 },
-  { type: "station", name: "Burnham", x: 493953.6767, y: 181375.3044, z: 0 },
+  {
+    type: "station",
+    name: "Burnham Berks",
+    x: 493953.6767,
+    y: 181375.3044,
+    z: 0,
+  },
   { type: "station", name: "Slough", x: 497851.1075, y: 180181.1819, z: 0 },
-  { type: "station", name: "Langley", x: 501336.6079, y: 179763.8399, z: 0 },
+  { type: "station", name: "Langley Berks", x: 501336.6079, y: 179763.8399, z: 0 },
   { type: "station", name: "Iver", x: 503774.5112, y: 179908.3325, z: 0 },
   {
     type: "station",
@@ -58,7 +64,7 @@ export const reading_shenfield: Positions[] = [
   { type: "station", name: "Farringdon", x: 531762.9134, y: 181817.2675, z: 0 },
   {
     type: "station",
-    name: "Liverpool Street",
+    name: "London Liverpool Street",
     x: 532851.5216,
     y: 181597.8254,
     z: 0,

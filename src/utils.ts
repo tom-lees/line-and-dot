@@ -6,11 +6,11 @@ import type { TrainRecord } from "./types/train";
 // TODO This whole ts needs a comb over.
 export function normaliseNetwork(
   network: Network,
-  screenWidth: number
+  screenWidth: number,
 ): Network {
   // Flatten all stations to compute group min/max
   const allPositions = Object.values(network).flatMap((line) =>
-    line.subsections.flatMap((subsection) => subsection.positions)
+    line.subsections.flatMap((subsection) => subsection.positions),
   );
   const allPositionsX = allPositions.map((p) => p.x);
   const allPositionsY = allPositions.map((p) => p.y);
@@ -42,14 +42,14 @@ export function normaliseNetwork(
           })),
         })),
       },
-    ])
+    ]),
   );
 }
 
 // TODO Hard code u values to train data.  No need to calculate.
 const calculateStationUs = (
   curve: THREE.CatmullRomCurve3,
-  stations: Extract<Positions, { type: "station" }>[]
+  stations: Extract<Positions, { type: "station" }>[],
 ) => {
   const sampleCount = Math.max(200, stations.length * 50);
   const samples = curve.getPoints(sampleCount);
@@ -96,7 +96,7 @@ export function buildCurveData(positions: Positions[]) {
 
 export function matchTrainToLineSubsection(
   trainRecord: TrainRecord,
-  subsection: Subsection
+  subsection: Subsection,
 ): THREE.CatmullRomCurve3 {
   return subsection.curveData?.curve as THREE.CatmullRomCurve3;
 }
@@ -133,12 +133,12 @@ export const createStationMatcher = (stations: StationU[]) => {
   });
 
   return (stationName: string): StationU | undefined => {
-    console.log("Matching station:", stationName);
+    // console.log("Matching station:", stationName);
     const results = fuse.search(stationName);
-    console.log(
-      "Fuse results:",
-      results.map((r) => ({ label: r.item.label, score: r.score }))
-    );
+    // console.log(
+    //   "Fuse results:",
+    //   results.map((r) => ({ label: r.item.label, score: r.score }))
+    // );
 
     if (!results.length) return undefined;
     const [best, second] = results;
@@ -148,10 +148,10 @@ export const createStationMatcher = (stations: StationU[]) => {
       second.score !== undefined &&
       best.score > second.score * 0.85
     ) {
-      console.log("Ambiguous match, returning undefined");
+      // console.log("Ambiguous match, returning undefined");
       return undefined;
     }
-    console.log("Matched:", best.item.label);
+    // console.log("Matched:", best.item.label);
     return best.item;
   };
 };
