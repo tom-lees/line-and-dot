@@ -13,7 +13,13 @@ export const reading_shenfield: Positions[] = [
     z: 0,
   },
   { type: "station", name: "Slough", x: 497851.1075, y: 180181.1819, z: 0 },
-  { type: "station", name: "Langley Berks", x: 501336.6079, y: 179763.8399, z: 0 },
+  {
+    type: "station",
+    name: "Langley Berks",
+    x: 501336.6079,
+    y: 179763.8399,
+    z: 0,
+  },
   { type: "station", name: "Iver", x: 503774.5112, y: 179908.3325, z: 0 },
   {
     type: "station",
@@ -52,7 +58,13 @@ export const reading_shenfield: Positions[] = [
     y: 181217.9925,
     z: 0,
   },
-  { type: "station", name: "Paddington", x: 526538.0067, y: 181269.8789, z: 0 },
+  {
+    type: "station",
+    name: "London Paddington",
+    x: 526538.0067,
+    y: 181269.8789,
+    z: 0,
+  },
   { type: "station", name: "Bond Street", x: 528725.735, y: 181036.7629, z: 0 },
   {
     type: "station",

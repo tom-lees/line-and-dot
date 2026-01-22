@@ -3,6 +3,8 @@ import { useEffect, useRef, type JSX } from "react";
 import * as THREE from "three";
 import type { TrainRecord } from "../types/train";
 import { normalise, type SubsectionRuntime } from "../utils";
+import { Label } from "./Label";
+import { klein } from "three/examples/jsm/Addons.js";
 
 // TODO Estimate of placement before initial position is based on 1hr30-1hr50 across whole line.
 //      ~ 100 minutes.  Therefore if a train is coming up to station x on initialation, we can
@@ -17,6 +19,7 @@ import { normalise, type SubsectionRuntime } from "../utils";
 // TODO Popup or console log/error when there is not a station match.
 // TODO This is running at 60 frames per second... but what if somes cpu ain't
 // TODO Farrinddon => London Liverpool Street breaks
+// TODO Test a delayed train.  Add tags with tEnd times and if tEnd changes indicate somehow.
 
 function findSubsectionForNextStations(
   nextName: string,
@@ -26,9 +29,9 @@ function findSubsectionForNextStations(
   return subsections
     .map((sub) => {
       const next = sub.stationMatcher(nextName);
-      // console.log("findSubsectionForNextStations -next:", next);
+      console.log("findSubsectionForNextStations -next:", next);
       const following = sub.stationMatcher(followingName);
-      // console.log("findSubsectionForNextStations -following:", following);
+      console.log("findSubsectionForNextStations -following:", following);
       if (!next || !following) {
         // console.log(
         //   "findSubsectionForNextStations - no match:",
@@ -77,19 +80,26 @@ export const TrainDot = ({
     uEnd: number | undefined;
     tStart: number | undefined; // ms timestamp
     tEnd: number | undefined; // ms timestamp
-    isFirstLeg: boolean;
+    isStartUp: boolean;
     isOnLeg: boolean;
+    nextStationName: string | undefined;
+    isTimetableChange: boolean;
   }>({
     subsection: null,
     uStart: undefined,
     uEnd: undefined,
     tStart: undefined,
     tEnd: undefined,
-    isFirstLeg: true,
+    isStartUp: true,
     isOnLeg: false,
+    nextStationName: undefined,
+    isTimetableChange: false,
   });
 
   useEffect(() => {
+    // TODO For Leg 2:  we should store the next and following station elsewhere, as
+    // when we are storing them in very close to when they expire, risking they might
+    // despawn.
     if (trainTimetable.length < 2) return;
     if (dotState.current.isOnLeg) return; // Train is moving
 
@@ -127,28 +137,10 @@ export const TrainDot = ({
     }
 
     // TODO Drop second condition as handled at top
-    if (dotState.current.isFirstLeg && !dotState.current.isOnLeg) {
-      // console.log("dot conditions - ifFirstLeg && !isOnLeg");
+    if (dotState.current.isStartUp && !dotState.current.isOnLeg) {
+      console.log("FIRST LEG ");
       if (now < trainTimetable[0].expectedArrival) {
-        // const printNow = new Date(now).toLocaleTimeString([], {
-        //   hour: "2-digit",
-        //   minute: "2-digit",
-        //   second: "2-digit",
-        // });
-        // console.log("now: ", printNow);
-        // const printExpectedArrival = new Date(
-        //   trainTimetable[0].expectedArrival,
-        // ).toLocaleTimeString([], {
-        //   hour: "2-digit",
-        //   minute: "2-digit",
-        //   second: "2-digit",
-        // });
-        // console.log(
-        //   "trainTimetable[0].expectedArrival: ",
-        //   printExpectedArrival,
-        // );
-
-        // console.log("train is before first station");
+        console.log("Before");
         dotState.current.subsection = subsectionWithPositions.subsection;
         dotState.current.tStart = now;
         dotState.current.tEnd = trainTimetable[0].expectedArrival;
@@ -162,36 +154,77 @@ export const TrainDot = ({
         // console.log("uEnd: ", dotState.current.uEnd);
 
         dotState.current.isOnLeg = true;
-        dotState.current.isFirstLeg = false;
+        dotState.current.isStartUp = false;
+
+        dotState.current.nextStationName = nextName;
       }
 
       if (now >= trainTimetable[0].expectedArrival) {
-        // console.log("train is at first station");
-        // console.log("now: ");
-        // new Date(now).toLocaleTimeString([], {
-        //   hour: "2-digit",
-        //   minute: "2-digit",
-        //   second: "2-digit",
-        // });
-        // console.log("trainTimetable[0].expectedArrival: ");
-        new Date(trainTimetable[0].expectedArrival).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        });
-        dotState.current.subsection = subsectionWithPositions.subsection;
-        dotState.current.tStart = now;
-        dotState.current.tEnd = trainTimetable[1].expectedArrival;
-        dotState.current.uStart = subsectionWithPositions.next.u;
-        dotState.current.uEnd = subsectionWithPositions.following.u;
-
+        console.log("After");
+        // TODO There is a minisecond where this is set and changes for the next if and needs to be accounted for.
+        dotState.current.nextStationName = nextName;
         dotState.current.isOnLeg = false;
-        dotState.current.isFirstLeg = false;
+        dotState.current.isStartUp = false;
       }
     }
+
+    if (dotState.current.nextStationName !== nextName) {
+      console.log("START SUBSEQUENT LEG");
+      console.log(dotState.current.nextStationName, nextName);
+      dotState.current.isOnLeg = true;
+      dotState.current.nextStationName = nextName;
+    }
+
+    if (!dotState.current.isStartUp && !dotState.current.isOnLeg) {
+      console.log("SET SUBSEQUENT LEG");
+      dotState.current.subsection = subsectionWithPositions.subsection;
+      dotState.current.tStart = now;
+      dotState.current.tEnd = trainTimetable[1].expectedArrival;
+      dotState.current.uStart = subsectionWithPositions.next.u;
+      dotState.current.uEnd = subsectionWithPositions.following.u;
+      dotState.current.nextStationName = nextName;
+    }
     // TODO Drop second condition as handled at top
-    // if (!dotState.current.isFirstLeg && !dotState.current.isOnLeg) {
+    // if (!dotState.current.isStartUp && !dotState.current.isOnLeg) {
   }, [trainTimetable, subsections]);
+
+  useEffect(() => {
+    // Only retime if the train is currently moving
+    if (!dotState.current.isOnLeg) return;
+
+    const nextArrival = trainTimetable[0]?.expectedArrival;
+    if (!nextArrival) return;
+
+    if (nextArrival === dotState.current.tEnd) return;
+
+    console.log("UPDATE tEnd");
+
+    const now = Date.now();
+
+    const { tStart, tEnd, uStart, uEnd } = dotState.current;
+
+    if (
+      tStart === undefined ||
+      tEnd === undefined ||
+      uStart === undefined ||
+      uEnd === undefined
+    ) {
+      return;
+    }
+    // TODO Check this logic
+    if (tEnd === nextArrival) return;
+
+    const duration = tEnd - tStart;
+    if (duration <= 0) return;
+
+    console.log("UPDATE tEnd");
+
+    const progress = (now - tStart) / duration;
+    const clamped = Math.min(Math.max(progress, 0), 1);
+
+    dotState.current.tStart = now - clamped * (nextArrival - now);
+    dotState.current.tEnd = nextArrival;
+  }, [trainTimetable]);
 
   useFrame(() => {
     // TODO Start should have initial stations
@@ -209,6 +242,8 @@ export const TrainDot = ({
       console.warn("TrainDot state not fully initialised");
       return;
     }
+
+    if (!dotState.current.isOnLeg) return;
 
     const now = new Date().getTime();
     const { tStart, tEnd, uStart, uEnd } = dotState.current;
@@ -229,6 +264,11 @@ export const TrainDot = ({
     const uCurrent = uStart + (uEnd - uStart) * clamped;
     // console.log("uCurrent: ", uCurrent);
 
+    if (clamped >= 1) {
+      dotState.current.isOnLeg = false;
+      dotState.current.isStartUp = false; //TODO This may be removed, do we need to double set it just in case?
+    }
+
     const pos =
       dotState.current.subsection.curveData.curve.getPointAt(uCurrent);
 
@@ -246,9 +286,39 @@ export const TrainDot = ({
     return null;
   }
 
+  const round2 = (num: number): number => Math.round(num * 100) / 100;
+
+  // TODO Learn fromEntries and object.entries.  I guess it is the rebuilding of an object.
+  const { uStartRounded, uEndRounded, tStartRounded, tEndRounded } = {
+    uStartRounded: round2(dotState.current.uStart!),
+    uEndRounded: round2(dotState.current.uEnd!),
+    tStartRounded: new Date(dotState.current.tStart!).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
+    tEndRounded: new Date(dotState.current.tEnd!).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
+  };
+
+  const isOnLegText = dotState.current.isOnLeg ? "Go" : "Stop";
+  const uValuesText = `u [${uStartRounded}, ${uEndRounded}]`;
+  const tValuesText = `t [${tStartRounded}, ${tEndRounded}]`;
+
+  const labelText = `${isOnLegText} ${uValuesText} ${tValuesText}`;
+
   return (
     <mesh ref={meshRef}>
       <sphereGeometry args={[2, 16, 16]} />
+      <Label
+        text={labelText}
+        position={[0, 0, 0]}
+        fontColour="#FF0000"
+        fontSize={12}
+      />
       <meshBasicMaterial color="red" />
     </mesh>
   );

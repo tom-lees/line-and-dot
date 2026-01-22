@@ -84,7 +84,7 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
       ))}
       {Object.entries(trains.trainData)
         //TODO Filter for testing
-        // .filter(([trainId]) => trainId === "202601217124102")
+        // .filter(([trainId]) => trainId === "202601227124088")
         .map(
           ([trainId, trainArrivalList]) =>
             trainArrivalList.length > 0 && (
