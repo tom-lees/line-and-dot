@@ -15,6 +15,8 @@ export type Positions =
     }
   | { type: "track"; x: number; y: number; z: number };
 
+// TODO curveData exists here and on SubsectionRuntime, does it need to be on both
+// TODO Add notes explaining curveData
 export type Subsection = {
   name: string; // e.g. "Reading → Shenfield"
   positions: Positions[]; // ordered list of positions along the line

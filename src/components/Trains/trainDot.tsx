@@ -1,10 +1,15 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, type JSX } from "react";
 import * as THREE from "three";
-import type { TrainRecord } from "../types/train";
-import { normalise, type SubsectionRuntime } from "../utils";
-import { Label } from "./Label";
-import { klein } from "three/examples/jsm/Addons.js";
+import type { TrainRecord } from "../../types/train";
+import { normalise, type SubsectionRuntime } from "../../utils";
+import { Label } from "../Label";
+
+// TODO Add timetracker.  If train has been sationary for longer time fade out.
+// TODO How to handle object delection, is that in parent.
+
+// TODO Issue, trains that are skipping stations, across multiple of our segments.
+//      This may make the tranfer logic between lines break.
 
 // TODO Estimate of placement before initial position is based on 1hr30-1hr50 across whole line.
 //      ~ 100 minutes.  Therefore if a train is coming up to station x on initialation, we can
@@ -21,6 +26,7 @@ import { klein } from "three/examples/jsm/Addons.js";
 // TODO Farrinddon => London Liverpool Street breaks
 // TODO Test a delayed train.  Add tags with tEnd times and if tEnd changes indicate somehow.
 
+// TODO Del once trainLogic complete
 function findSubsectionForNextStations(
   nextName: string,
   followingName: string,
@@ -29,31 +35,14 @@ function findSubsectionForNextStations(
   return subsections
     .map((sub) => {
       const next = sub.stationMatcher(nextName);
-      console.log("findSubsectionForNextStations -next:", next);
       const following = sub.stationMatcher(followingName);
-      console.log("findSubsectionForNextStations -following:", following);
       if (!next || !following) {
-        // console.log(
-        //   "findSubsectionForNextStations - no match:",
-        //   nextName,
-        //   followingName,
-        // );
         return null;
       }
       if (next.u >= following.u) {
-        // console.log(
-        //   "findSubsectionForNextStations - reverse order:",
-        //   nextName,
-        //   followingName,
-        // );
         return null;
       }
-      // console.log(
-      //   "findSubsectionForNextStations - subsection:",
-      //   sub.name,
-      //   next,
-      //   following,
-      // );
+      // console.log( "findSubsectionForNextStations - subsection:", sub.name, next, following,);
       return { subsection: sub, next, following };
     })
     .filter(Boolean)[0]; // first valid match
@@ -68,12 +57,8 @@ export const TrainDot = ({
   speed?: number;
 }): JSX.Element | null => {
   const meshRef = useRef<THREE.Mesh>(null);
-  // const uRef = useRef<number | undefined>(undefined);
-  // const targetURef = useRef<number | undefined>(undefined);
+  // const dotState = useRef<TrainState>({ type: "initialise" });
 
-  // TODO ASK I do not think i can declare the times here
-  // as i do not know if the timetable will have my two records.
-  // Can I declare them this early?
   const dotState = useRef<{
     subsection: SubsectionRuntime | null;
     uStart: number | undefined;
@@ -83,7 +68,6 @@ export const TrainDot = ({
     isStartUp: boolean;
     isOnLeg: boolean;
     nextStationName: string | undefined;
-    isTimetableChange: boolean;
   }>({
     subsection: null,
     uStart: undefined,
@@ -93,32 +77,20 @@ export const TrainDot = ({
     isStartUp: true,
     isOnLeg: false,
     nextStationName: undefined,
-    isTimetableChange: false,
   });
 
   useEffect(() => {
     // TODO For Leg 2:  we should store the next and following station elsewhere, as
     // when we are storing them in very close to when they expire, risking they might
     // despawn.
+
     if (trainTimetable.length < 2) return;
     if (dotState.current.isOnLeg) return; // Train is moving
 
     const now = new Date().getTime();
 
-    // console.log(
-    //   "useEffect now: ",
-    //   new Date(now).toLocaleTimeString([], {
-    //     hour: "2-digit",
-    //     minute: "2-digit",
-    //     second: "2-digit",
-    //   }),
-    // );
-
     const nextName = normalise(trainTimetable[0].stationName);
     const followingName = normalise(trainTimetable[1].stationName);
-
-    // console.log("nextName: ", nextName);
-    // console.log("followingName: ", followingName);
 
     const subsectionWithPositions = findSubsectionForNextStations(
       nextName,
@@ -127,16 +99,16 @@ export const TrainDot = ({
     );
 
     if (!subsectionWithPositions) {
-      console.warn(
-        "No matching subsection found for stations:",
-        nextName,
-        "→",
-        followingName,
-      );
+      // TODO Add back in once all lines are present
+      // console.warn(
+      //   "No matching subsection found for stations:",
+      //   nextName,
+      //   "→",
+      //   followingName,
+      // );
       return;
     }
 
-    // TODO Drop second condition as handled at top
     if (dotState.current.isStartUp && !dotState.current.isOnLeg) {
       console.log("FIRST LEG ");
       if (now < trainTimetable[0].expectedArrival) {
@@ -146,16 +118,12 @@ export const TrainDot = ({
         dotState.current.tEnd = trainTimetable[0].expectedArrival;
         const uAdjustment =
           (trainTimetable[0].expectedArrival - now) / (100 * 60 * 1000);
-        // console.log("uAdjustment: ", uAdjustment);
-        // console.log("next u: ", subsectionWithPositions.next.u);
-        dotState.current.uStart = subsectionWithPositions.next.u - uAdjustment; //TODO Change notatoin inline with <tStart />
-        // console.log("uStart: ", dotState.current.uStart);
+        dotState.current.uStart =
+          subsectionWithPositions.next.u - uAdjustment > 0
+            ? subsectionWithPositions.next.u - uAdjustment
+            : subsectionWithPositions.next.u;
         dotState.current.uEnd = subsectionWithPositions.next.u;
-        // console.log("uEnd: ", dotState.current.uEnd);
-
         dotState.current.isOnLeg = true;
-        dotState.current.isStartUp = false;
-
         dotState.current.nextStationName = nextName;
       }
 
@@ -164,7 +132,7 @@ export const TrainDot = ({
         // TODO There is a minisecond where this is set and changes for the next if and needs to be accounted for.
         dotState.current.nextStationName = nextName;
         dotState.current.isOnLeg = false;
-        dotState.current.isStartUp = false;
+        // dotState.current.isStartUp = false;
       }
     }
 
@@ -190,6 +158,7 @@ export const TrainDot = ({
 
   useEffect(() => {
     // Only retime if the train is currently moving
+
     if (!dotState.current.isOnLeg) return;
 
     const nextArrival = trainTimetable[0]?.expectedArrival;
@@ -248,6 +217,14 @@ export const TrainDot = ({
     const now = new Date().getTime();
     const { tStart, tEnd, uStart, uEnd } = dotState.current;
 
+    if (dotState.current.isStartUp) {
+      const pos =
+        dotState.current.subsection.curveData.curve.getPointAt(uStart);
+      meshRef.current.position.set(pos.x, pos.y, pos.z);
+      dotState.current.isStartUp = false;
+      return;
+    }
+
     const duration = tEnd - tStart;
     // console.log("duration: ", duration);
     if (duration <= 0) return;
@@ -304,11 +281,12 @@ export const TrainDot = ({
     }),
   };
 
-  const isOnLegText = dotState.current.isOnLeg ? "Go" : "Stop";
+  // const isOnLegText = dotState.current.isOnLeg ? "Go" : "Stop";
   const uValuesText = `u [${uStartRounded}, ${uEndRounded}]`;
-  const tValuesText = `t [${tStartRounded}, ${tEndRounded}]`;
+  // const tValuesText = `t [${tStartRounded}, ${tEndRounded}]`;
 
-  const labelText = `${isOnLegText} ${uValuesText} ${tValuesText}`;
+  // const labelText = `${isOnLegText} ${tValuesText} ${trainTimetable[0].vehicleId}`;
+  const labelText = `${trainTimetable[0].vehicleId.slice(-3)} ${uValuesText}`;
 
   return (
     <mesh ref={meshRef}>

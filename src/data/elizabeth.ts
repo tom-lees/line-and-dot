@@ -1,5 +1,6 @@
 import type { Positions } from "../components/trainLines";
-
+// TOOD Function to reverse rails
+// TODO Function to offset by tangent
 export const reading_shenfield: Positions[] = [
   { type: "station", name: "Reading", x: 471456.4223, y: 173854.3511, z: 0 },
   { type: "station", name: "Twyford", x: 479053.0293, y: 175777.6775, z: 0 },

@@ -8,6 +8,11 @@ import { Elizabeth } from "./components/Elizabeth";
 import { TrainRecordsTable } from "./dev/TrainRecordsTable";
 import useTrainData from "./hooks/useTrainData";
 
+
+// TODO Testing should break down and show a count for each inidividual train for each line.
+// TODO Perhaps testing could ALSO have a count for trains arriving at each station in the next 5 minutes
+//      This can be compared to individual trains on each line.
+
 // TODO Add screenwidth tracker
 const screenWidth = 1000;
 

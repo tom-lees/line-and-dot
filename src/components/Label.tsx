@@ -25,6 +25,7 @@ export function Label({
         style={{
           fontSize: `${fontSize}px`,
           color: fontColour,
+          background: "rgba(0,0,0,0.8)", // TODO Drop
           fontFamily: "Arial, sans-serif",
           whiteSpace: "nowrap",
           pointerEvents: "none",

@@ -108,14 +108,6 @@ export type StationU = {
   t?: number;
 };
 
-export type SubsectionRuntime = Subsection & {
-  curveData: {
-    curve: THREE.CatmullRomCurve3;
-    stationUs: StationU[];
-  };
-  stationMatcher: (stationName: string) => StationU | undefined;
-};
-
 export const normalise = (s: string) =>
   s
     .toLowerCase()
