@@ -12,7 +12,7 @@ export type SubsectionRuntime = Subsection & {
 
 export type IdleTrainState = {
   type: "idle";
-  stationId: string;
+  id: string;
   subsection: SubsectionRuntime;
   tEnd?: number;
   tStart: number;
@@ -26,7 +26,7 @@ export type InitialTrainState = {
 
 export type MovingTrainState = {
   type: "moving";
-  stationId: string;
+  id: string;
   subsection: SubsectionRuntime;
   tEnd: number;
   tStart: number;

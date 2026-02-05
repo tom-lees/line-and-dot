@@ -105,7 +105,7 @@ export type StationU = {
   label: string;
   normalisedLabel: string;
   u: number;
-  t?: number;
+  t: number;
 };
 
 export const normalise = (s: string) =>
