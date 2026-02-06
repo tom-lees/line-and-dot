@@ -12,6 +12,7 @@ import type { TrainRecord } from "../../types/train";
 // names.
 
 export function findSubsectionAndStationDetails(
+  // TODO Testing which includes the appended t values
   // TODO SubsectionRuntime might need adjust, like a tag for which line.
   // TODO Thoughts of shallow and deep copies.  Do not think necessary but needs more thought.
   // TODO Ask, should I proritise reassigning new parameters, or use the state. when nothing changes?
@@ -47,9 +48,9 @@ export function findSubsectionAndStationDetails(
         if (!destination1 || !destination2) return undefined;
         if (destination1.u >= destination2.u) return undefined;
         return {
-          destination1: { ...destination1, t:destination1T },
+          destination1: { ...destination1, t: destination1T },
           destination1Id,
-          destination2: { ...destination2, t:destination2T },
+          destination2: { ...destination2, t: destination2T },
           subsection: sub,
         };
       })
@@ -61,7 +62,11 @@ export function findSubsectionAndStationDetails(
       .map((sub) => {
         const destination1 = sub.stationMatcher(destination1name);
         if (!destination1) return undefined;
-        return { destination1, destination1Id, subsection: sub };
+        return {
+          destination1: { ...destination1, t: destination1T },
+          destination1Id,
+          subsection: sub,
+        };
       })
       .find(Boolean);
   }
@@ -280,6 +285,7 @@ export function handleMoving({
   destination1,
   destination1Id,
   destination2,
+  now,
   state,
   subsection,
   uCurrent,
@@ -287,6 +293,7 @@ export function handleMoving({
   destination1: StationU;
   destination1Id: string;
   destination2?: StationU;
+  now: number;
   state: MovingTrainState;
   subsection: SubsectionRuntime;
   uCurrent?: number;
@@ -317,7 +324,20 @@ export function handleMoving({
 
   // Delay to next station; Update tEnd if destintion1.t has changed
   if (state.id === destination1Id && state.tEnd !== destination1.t) {
+    if (state.tEnd - state.tStart < 0) {
+      console.error("handleMoving train delay: tEnd - tStart < 0");
+      return state;
+    }
+
+    const progress = Math.min(
+      Math.max((now - state.tStart) / (state.tEnd - state.tStart), 0),
+      1,
+    );
+
+    // state.tStart = now - progress * (destination1.t - now);
+    state.tStart = (progress * destination1.t - now) / (progress - 1);
     state.tEnd = destination1.t;
+
     return state;
   }
 

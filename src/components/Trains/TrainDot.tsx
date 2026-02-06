@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import * as THREE from "three";
 import type { TrainRecord } from "../../types/train";
 import { Label } from "../Label";
@@ -15,6 +15,7 @@ import type {
   SubsectionRuntime,
   TrainState,
 } from "./trainTypes";
+import { normalise } from "../../utils";
 
 // TODO Add timetracker.  If train has been sationary for longer time fade out.
 // TODO How to handle object delection, is that in parent.
@@ -72,6 +73,18 @@ export const TrainDot = ({
 
   const dotState = useRef<TrainState>({ type: "initialise" });
 
+  // TODO Testing
+  const prevTrainTimetable = useRef<TrainRecord[]>([]);
+  const [prevStationName, setPrevStationName] = useState<string>("");
+  useEffect(() => {
+    const curr = trainTimetable;
+    const prev = prevTrainTimetable.current;
+    if (prev.length > 0 && curr.length > 0 && curr[0].id !== prev[0].id) {
+      setPrevStationName(prev[0].stationName);
+    }
+    prevTrainTimetable.current = curr;
+  }, [trainTimetable]);
+
   useEffect(() => {
     const now = Date.now();
 
@@ -85,20 +98,16 @@ export const TrainDot = ({
     const { destination1, destination1Id, destination2, subsection } =
       subsectionAndStationDetails;
 
-    console.log("destination 1", destination1.t);
-
     dotState.current = (() => {
       switch (dotState.current.type) {
         case "initialise": {
-          const hi = handleInitialise({
+          return handleInitialise({
             destination1,
             destination1Id,
             now,
             subsection,
             destination2,
           });
-          console.log("initialise", hi);
-          return hi;
         }
         case "idle":
           return handleIdle({
@@ -115,6 +124,7 @@ export const TrainDot = ({
             destination1,
             destination1Id,
             destination2,
+            now,
             state: dotState.current as MovingTrainState,
             subsection,
           });
@@ -123,60 +133,79 @@ export const TrainDot = ({
   }, [trainTimetable, subsections]);
 
   useFrame(() => {
-    if (dotState.current.type !== "moving") return;
     const state = dotState.current;
 
-    const progress = Math.min(
-      Math.max((Date.now() - state.tStart) / (state.tEnd - state.tStart), 0),
-      1,
-    );
-    const uCurrent = state.uStart + (state.uEnd - state.uStart) * progress;
+    if (state.type === "initialise") return;
 
-    const pos = state.subsection.curveData.curve.getPointAt(uCurrent);
-    if (meshRef.current) meshRef.current.position.set(pos.x, pos.y, pos.z);
+    if (state.type === "idle") {
+      const pos = state.subsection.curveData.curve.getPointAt(state.uStart);
+      if (meshRef.current) meshRef.current.position.set(pos.x, pos.y, pos.z);
+    }
 
-    if (progress >= 1) {
-      dotState.current = { ...state, type: "idle" } as IdleTrainState;
+    if (state.type === "moving") {
+      const progress = Math.min(
+        Math.max((Date.now() - state.tStart) / (state.tEnd - state.tStart), 0),
+        1,
+      );
+
+      const uCurrent = state.uStart + (state.uEnd - state.uStart) * progress;
+
+      const pos = state.subsection.curveData.curve.getPointAt(uCurrent);
+      if (meshRef.current) meshRef.current.position.set(pos.x, pos.y, pos.z);
+
+      if (progress >= 1) {
+        dotState.current = {
+          ...state,
+          type: "idle",
+          tStart: state.tEnd,
+          uStart: state.uEnd,
+        } as IdleTrainState;
+      }
     }
   });
 
   if (dotState.current.type === "initialise") {
     return null;
   }
+  //TODO Testing remove after
+  // if (dotState.current.type === "idle") {
+  //   return null;
+  // }
 
   // const round2 = (num: number): number => Math.round(num * 100) / 100;
 
   // TODO Learn fromEntries and object.entries.  I guess it is the rebuilding of an object.
-  // const { uStartRounded, uEndRounded, tStartRounded, tEndRounded } = {
-  //   uStartRounded: round2(dotState.current.uStart!),
-  //   uEndRounded: round2(dotState.current.uEnd!),
-  //   tStartRounded: new Date(dotState.current.tStart!).toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //     second: "2-digit",
-  //   }),
-  //   tEndRounded: new Date(dotState.current.tEnd!).toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //     second: "2-digit",
-  //   }),
-  // };
+  const { tStartRounded, tEndRounded } = {
+    // uStartRounded: round2(dotState.current.uStart!),
+    // uEndRounded: round2(dotState.current.uEnd!),
+    tStartRounded: new Date(dotState.current.tStart!).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
+    tEndRounded: new Date(dotState.current.tEnd!).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
+  };
 
   // // const isOnLegText = dotState.current.isOnLeg ? "Go" : "Stop";
   // const uValuesText = `u [${uStartRounded}, ${uEndRounded}]`;
   // // const tValuesText = `t [${tStartRounded}, ${tEndRounded}]`;
 
-  // // const labelText = `${isOnLegText} ${tValuesText} ${trainTimetable[0].vehicleId}`;
+  // const labelText = `${isOnLegText} ${tValuesText} ${trainTimetable[0].vehicleId}`;
   // const labelText = `${trainTimetable[0].vehicleId.slice(-3)} ${uValuesText}`;
-
+  const labelText = `${dotState.current.type} ${normalise(prevStationName)} ${normalise(trainTimetable[0].stationName)} ${trainTimetable[0].vehicleId.slice(-3)} ${tStartRounded} ${tEndRounded}`;
   return (
     <mesh ref={meshRef}>
       <sphereGeometry args={[2, 16, 16]} />
       <Label
-        text={"test"}
+        text={labelText}
         position={[0, 0, 0]}
         fontColour="#FF0000"
         fontSize={12}
+        rotate="diagonal"
       />
       <meshBasicMaterial color="red" />
     </mesh>

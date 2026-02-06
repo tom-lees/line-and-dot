@@ -1,13 +1,10 @@
 import { useMemo, type JSX } from "react";
 import type { Network } from "./trainLines";
-import {
-  buildCurveData,
-  createStationMatcher,
-  type SubsectionRuntime,
-} from "../utils";
+import { buildCurveData, createStationMatcher } from "../utils";
 import { Label } from "./Label";
 import useTrainData from "../hooks/useTrainData";
 import { TrainDot } from "./Trains/TrainDot";
+import type { SubsectionRuntime } from "./Trains/trainTypes";
 // TODO Hayes and Harington two labels overlaping.  drop one lablel.  Label on tag in data or component.
 // TODO Handle stations that reach an NA, they jump off the line, should remain at current u position.
 // TODO Paddington and London Paddington Rail Station breaks logic.
@@ -80,11 +77,12 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
           position={lp.position}
           fontSize={10}
           fontColour="white"
+          rotate="vertical"
         />
       ))}
       {Object.entries(trains.trainData)
         //TODO Filter for testing
-        // .filter(([trainId]) => trainId === "202602057124587")
+        // .filter(([trainId]) => trainId === "202602067123864")
         .map(
           ([trainId, trainArrivalList]) =>
             trainArrivalList.length > 0 && (

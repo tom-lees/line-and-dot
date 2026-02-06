@@ -23,6 +23,7 @@ const mockStateMovingDestination1: MovingTrainState = {
   uEnd: 0.5,
   uStart: 0,
 };
+const now = 500;
 
 describe("handleMoving", () => {
   it("destination1 time change; train is delayed", () => {
@@ -38,6 +39,7 @@ describe("handleMoving", () => {
     const result = handleMoving({
       destination1,
       destination1Id: mockdestination1Id,
+      now,
       state: mockStateMovingDestination1,
       subsection: mockSubsection,
       uCurrent: mockUCurrent,
@@ -66,6 +68,7 @@ describe("handleMoving", () => {
     const result = handleMoving({
       destination1,
       destination1Id: mockdestination1Id,
+      now,
       state: mockStateMovingDestination1,
       subsection: mockSubsection,
       uCurrent: mockUCurrent,
@@ -93,6 +96,7 @@ describe("handleMoving", () => {
     const result = handleMoving({
       destination1,
       destination1Id: mockdestination1Id,
+      now,
       state: mockStateMovingDestination1,
       subsection: mockSubsection,
       uCurrent: mockUCurrent,
@@ -120,6 +124,7 @@ describe("handleMoving", () => {
     const result = handleMoving({
       destination1,
       destination1Id: mockdestination1Id,
+      now,
       state: mockStateMovingDestination1,
       subsection: mockSubsection,
       uCurrent: mockUCurrent,
@@ -154,6 +159,7 @@ describe("handleMoving", () => {
       destination1,
       destination1Id: mockdestination1Id,
       destination2,
+      now,
       state: mockStateMovingDestination1,
       subsection: mockSubsection,
       uCurrent: mockUCurrent,
@@ -188,6 +194,7 @@ describe("handleMoving", () => {
       destination1,
       destination1Id: mockdestination1Id,
       destination2,
+      now,
       state: mockStateMovingDestination1,
       subsection: mockSubsection,
       uCurrent: mockUCurrent,
@@ -200,5 +207,42 @@ describe("handleMoving", () => {
     expect(result.tStart).toBe(destination1.t);
     expect(result.uEnd).toBe(destination2.u);
     expect(result.uStart).toBe(destination1.u);
+  });
+
+  it("train is delayed (tEnd increases)", () => {
+    const orginalStateMockDestination1 = { ...mockStateMovingDestination1 };
+
+    const destination1: StationU = {
+      label: "",
+      normalisedLabel: "",
+      t: 2000,
+      u: 0.5,
+    };
+    const destination2: StationU = {
+      label: "",
+      normalisedLabel: "",
+      t: 3000,
+      u: 0.75,
+    };
+
+    const mockUCurrent = 0.2;
+
+    const result = handleMoving({
+      destination1,
+      destination1Id: mockdestination1Id,
+      destination2,
+      now,
+      state: mockStateMovingDestination1,
+      subsection: mockSubsection,
+      uCurrent: mockUCurrent,
+    });
+
+    expect(result.id).toBe(mockdestination1Id);
+    expect(result.subsection).toBe(mockSubsection);
+    expect(result.type).toBe("moving");
+    expect(result.tEnd).toBeGreaterThan(orginalStateMockDestination1.tEnd);
+    // expect(result.tStart).toBeLessThan(mockStateMovingDestination1.tStart);
+    // expect(result.uEnd).toBe(destination1.u);
+    // expect(result.uStart).toBe(destination1.u);
   });
 });
