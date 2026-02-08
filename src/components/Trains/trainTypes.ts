@@ -1,13 +1,13 @@
-import type { StationU } from "../../utils";
+import type { StationWithU } from "../../utils";
 import type { Subsection } from "../trainLines";
 import * as THREE from "three";
 
 export type SubsectionRuntime = Subsection & {
   curveData: {
     curve: THREE.CatmullRomCurve3;
-    stationUs: StationU[]; // TODO Decide where this finally lives
+    stationUs: StationWithU[]; // TODO Decide where this finally lives
   };
-  stationMatcher: (stationName: string) => StationU | undefined;
+  stationMatcher: (stationName: string) => StationWithU | undefined;
 };
 
 export type IdleTrainState = {

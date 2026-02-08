@@ -8,7 +8,6 @@ import { Elizabeth } from "./components/Elizabeth";
 import { TrainRecordsTable } from "./dev/TrainRecordsTable";
 import useTrainData from "./hooks/useTrainData";
 
-
 // TODO Testing should break down and show a count for each inidividual train for each line.
 // TODO Perhaps testing could ALSO have a count for trains arriving at each station in the next 5 minutes
 //      This can be compared to individual trains on each line.
@@ -20,7 +19,7 @@ export default function App() {
   const normalisedNetwork = useMemo(
     () => normaliseNetwork(network, screenWidth),
     // TODO add screenwidth when it can be adjusted
-    []
+    [],
   );
 
   const trains = useTrainData();
@@ -33,6 +32,7 @@ export default function App() {
   //   [elizabethStations]
   // );
 
+  // TODO Add responsive cameraZ for phone users.  useScreenWith + event listeners (perhaps pixel width < pixel height?)
   const cameraZ = useMemo(() => {
     return screenWidth * 0.5;
   }, []);
@@ -43,7 +43,12 @@ export default function App() {
         <div className="border rounded-md overflow-hidden">
           <div className="w-full h-[400px]">
             <Canvas
-              camera={{ position: [0, 0, cameraZ], fov: 50 }}
+              camera={{
+                position: [0, 0, cameraZ],
+                fov: 50,
+                near: 0.01,
+                far: 2000,
+              }}
               style={{ width: "100%", height: "100%" }}
             >
               <color attach="background" args={["#0c0c0f"]} />

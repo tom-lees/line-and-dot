@@ -2,8 +2,8 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState, type JSX } from "react";
 import * as THREE from "three";
 import type { TrainRecord } from "../../types/train";
-import { Label } from "../Label";
 import {
+  findPreviousSubsectionAndStationDetails,
   findSubsectionAndStationDetails,
   handleIdle,
   handleInitialise,
@@ -15,6 +15,7 @@ import type {
   SubsectionRuntime,
   TrainState,
 } from "./trainTypes";
+import { Label } from "../Label";
 import { normalise } from "../../utils";
 
 // TODO Add timetracker.  If train has been sationary for longer time fade out.
@@ -69,7 +70,6 @@ export const TrainDot = ({
   speed?: number;
 }): JSX.Element | null => {
   const meshRef = useRef<THREE.Mesh>(null);
-  // const dotState = useRef<TrainState>({ type: "initialise" });
 
   const dotState = useRef<TrainState>({ type: "initialise" });
 
@@ -86,14 +86,47 @@ export const TrainDot = ({
   }, [trainTimetable]);
 
   useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        dotState.current = { type: "initialise" };
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+
+  useEffect(() => {
     const now = Date.now();
 
-    const subsectionAndStationDetails = findSubsectionAndStationDetails({
+    let subsectionAndStationDetails = findSubsectionAndStationDetails({
       subsections,
       trainTimetable,
     });
 
-    if (!subsectionAndStationDetails) return;
+    //TODO Error log which subsections are failing
+    if (!subsectionAndStationDetails) {
+      // console.log("no subsection match");
+      return;
+    }
+    // console.log("useEffect idle:", subsectionAndStationDetails.subsection.name);
+
+    // If destination1 u + uAdjustment is less than 0,
+    // the train is before that subsection of the line.
+    // So we find the previous subsection.
+    // (If does not exist, train is at start of line.)
+    // TODO Estimate of line length (100), will not apply to all lines
+    const uAdjustment =
+      (subsectionAndStationDetails.destination1.t - now) / (100 * 60 * 1000);
+    if (subsectionAndStationDetails.destination1.u - uAdjustment < 0) {
+      // console.log("prev");
+      const prev = findPreviousSubsectionAndStationDetails({
+        subsections,
+        trainTimetable,
+      });
+      if (prev) subsectionAndStationDetails = prev;
+    }
 
     const { destination1, destination1Id, destination2, subsection } =
       subsectionAndStationDetails;
@@ -138,6 +171,7 @@ export const TrainDot = ({
     if (state.type === "initialise") return;
 
     if (state.type === "idle") {
+      // console.log("useframe idle:", state.subsection.name);
       const pos = state.subsection.curveData.curve.getPointAt(state.uStart);
       if (meshRef.current) meshRef.current.position.set(pos.x, pos.y, pos.z);
     }
@@ -175,20 +209,20 @@ export const TrainDot = ({
   // const round2 = (num: number): number => Math.round(num * 100) / 100;
 
   // TODO Learn fromEntries and object.entries.  I guess it is the rebuilding of an object.
-  const { tStartRounded, tEndRounded } = {
-    // uStartRounded: round2(dotState.current.uStart!),
-    // uEndRounded: round2(dotState.current.uEnd!),
-    tStartRounded: new Date(dotState.current.tStart!).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }),
-    tEndRounded: new Date(dotState.current.tEnd!).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }),
-  };
+  // const { tStartRounded, tEndRounded } = {
+  //   //   // uStartRounded: round2(dotState.current.uStart!),
+  //   //   // uEndRounded: round2(dotState.current.uEnd!),
+  //   tStartRounded: new Date(dotState.current.tStart!).toLocaleTimeString([], {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //     second: "2-digit",
+  //   }),
+  //   tEndRounded: new Date(dotState.current.tEnd!).toLocaleTimeString([], {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //     second: "2-digit",
+  //   }),
+  // };
 
   // // const isOnLegText = dotState.current.isOnLeg ? "Go" : "Stop";
   // const uValuesText = `u [${uStartRounded}, ${uEndRounded}]`;
@@ -196,18 +230,18 @@ export const TrainDot = ({
 
   // const labelText = `${isOnLegText} ${tValuesText} ${trainTimetable[0].vehicleId}`;
   // const labelText = `${trainTimetable[0].vehicleId.slice(-3)} ${uValuesText}`;
-  const labelText = `${dotState.current.type} ${normalise(prevStationName)} ${normalise(trainTimetable[0].stationName)} ${trainTimetable[0].vehicleId.slice(-3)} ${tStartRounded} ${tEndRounded}`;
+  // const labelText = `${normalise(prevStationName)} ${normalise(trainTimetable[0].stationName)} ${trainTimetable[0].vehicleId.slice(-3)}`;
   return (
     <mesh ref={meshRef}>
       <sphereGeometry args={[2, 16, 16]} />
-      <Label
-        text={labelText}
-        position={[0, 0, 0]}
-        fontColour="#FF0000"
-        fontSize={12}
-        rotate="diagonal"
-      />
       <meshBasicMaterial color="red" />
     </mesh>
   );
 };
+      // <Label
+      //   text={labelText}
+      //   position={[0, 0, 0]}
+      //   fontColour="#FF0000"
+      //   fontSize={12}
+      //   rotate="vertical"
+      // />

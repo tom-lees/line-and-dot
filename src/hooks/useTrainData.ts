@@ -13,7 +13,7 @@ export default function useTrainData() {
 
     const interval = setInterval(() => {
       trainService.refresh();
-    }, 5000); // refresh every 5 seconds
+    }, 10000); // refresh every 10 seconds
 
     return () => {
       unsubscribe();

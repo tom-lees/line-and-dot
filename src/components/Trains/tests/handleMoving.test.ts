@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { handleMoving } from "../trainLogic";
 import type { MovingTrainState, SubsectionRuntime } from "../trainTypes";
 import type { CatmullRomCurve3 } from "three";
-import type { StationU } from "../../../utils";
+import type { StationWithUAndT } from "../../../utils";
 
 const mockdestination1Id = "1DestinationId";
 const mockSubsection: SubsectionRuntime = {
@@ -27,7 +27,7 @@ const now = 500;
 
 describe("handleMoving", () => {
   it("destination1 time change; train is delayed", () => {
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -56,7 +56,7 @@ describe("handleMoving", () => {
   });
 
   it("1 record (destination 1) train has reached destination (uEnd)", () => {
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -84,7 +84,7 @@ describe("handleMoving", () => {
   });
 
   it("1 record (destination 1) train has NOT reached destination (uEnd)", () => {
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -112,7 +112,7 @@ describe("handleMoving", () => {
   });
 
   it("1 record (destination 1) train has passed destination (uEnd)", () => {
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -140,13 +140,13 @@ describe("handleMoving", () => {
   });
 
   it("2 records (destination 1 & destination 2) train has reached destination (uEnd)", () => {
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0.5,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -175,13 +175,13 @@ describe("handleMoving", () => {
   });
 
   it("2 records (destination 1 & destination 2) train has passed destination (uEnd)", () => {
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0.6,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -212,13 +212,13 @@ describe("handleMoving", () => {
   it("train is delayed (tEnd increases)", () => {
     const orginalStateMockDestination1 = { ...mockStateMovingDestination1 };
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
       u: 0.5,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 3000,

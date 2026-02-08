@@ -13,7 +13,7 @@ export type ApiRecord = {
 export type TrainRecord = {
   id: string;
   destinationName: string;
-  direction: string;
+  direction: "inbound" | "outbound" | undefined;
   expectedArrival: number;
   lineId: string;
   stationName: string;

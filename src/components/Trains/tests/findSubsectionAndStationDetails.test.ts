@@ -1,11 +1,11 @@
 import type { TrainRecord } from "../../../types/train";
-import { normalise, type StationU } from "../../../utils";
+import { normalise, type StationWithUAndT } from "../../../utils";
 import { findSubsectionAndStationDetails } from "../trainLogic";
 import type { SubsectionRuntime } from "../trainTypes";
 import type { CatmullRomCurve3 } from "three";
 
-// Helper to create a StationU
-function createStation(label: string, u: number): StationU {
+// Helper to create a StationWithUAndT
+function createStation(label: string, u: number): StationWithUAndT {
   return {
     label,
     normalisedLabel: normalise(label),
@@ -14,9 +14,13 @@ function createStation(label: string, u: number): StationU {
   };
 }
 
-function createSubsection(id: string, stations: StationU[]): SubsectionRuntime {
+function createSubsection(
+  id: string,
+  stations: StationWithUAndT[],
+): SubsectionRuntime {
   return {
     name: `sub-${id}`, // required
+    type: "outbound",
     positions: [], // required, can be empty for tests
     curveData: {
       curve: {} as CatmullRomCurve3, // mock
@@ -32,7 +36,7 @@ function createTrainRecord(stationName: string, id = "train1"): TrainRecord {
   return {
     id,
     destinationName: "",
-    direction: "",
+    direction: undefined,
     expectedArrival: 1000,
     lineId: "line1",
     stationName,

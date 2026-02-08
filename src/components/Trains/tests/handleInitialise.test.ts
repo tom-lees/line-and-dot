@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { handleInitialise } from "../trainLogic";
 import type { SubsectionRuntime } from "../trainTypes";
 import type { CatmullRomCurve3 } from "three";
-import type { StationU } from "../../../utils";
+import type { StationWithUAndT } from "../../../utils";
 
 const mockSubsection: SubsectionRuntime = {
   name: "mock",
@@ -20,13 +20,13 @@ describe("handleInitialise", () => {
   it("returns idle state when train is at station", () => {
     const now = 1000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 0,
       u: 0.1,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -51,13 +51,13 @@ describe("handleInitialise", () => {
   it("2 Records; start of line; train is at station; destination1t is now; should be idle", () => {
     const now = 1000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -82,13 +82,13 @@ describe("handleInitialise", () => {
   it("2 Records; start of line; train is at station; destination1t is in future; should be idle", () => {
     const now = 0;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -113,13 +113,13 @@ describe("handleInitialise", () => {
   it("2 Records; start of line; train timetable record persists after it should have left station; should be idle", () => {
     const now = 1000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 0,
       u: 0,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -144,13 +144,13 @@ describe("handleInitialise", () => {
   it("2 Records; midpoint of line; train is approaching station; destination1t is in future; should be moving", () => {
     const now = 0;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0.5,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -175,13 +175,13 @@ describe("handleInitialise", () => {
   it("2 Records; midpoint of line; train is at station; destination1t is in now; should be idle", () => {
     const now = 1000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0.5,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -206,13 +206,13 @@ describe("handleInitialise", () => {
   it("2 Records; midpoint of line; train is at station; destination1t is in past; should be idle", () => {
     const now = 2000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0.5,
     };
-    const destination2: StationU = {
+    const destination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 3000,
@@ -237,7 +237,7 @@ describe("handleInitialise", () => {
   it("1 Record; start of line; train is at station; destination1t is in future; should be idle", () => {
     const now = 0;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -259,7 +259,7 @@ describe("handleInitialise", () => {
   it("1 Record; start of line; train is at station; destination1t is now; should be idle", () => {
     const now = 1000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -281,7 +281,7 @@ describe("handleInitialise", () => {
   it("1 Record; start of line; train is at station; destination1t is in past; should be idle", () => {
     const now = 1000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -303,7 +303,7 @@ describe("handleInitialise", () => {
   it("1 Record; midpoint on line; train is approaching station; destination1t is in future; should be moving", () => {
     const now = 0;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -327,7 +327,7 @@ describe("handleInitialise", () => {
   it("1 Record; midpoint on line; train is at station; destination1t is now; should be idle", () => {
     const now = 1000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -349,7 +349,7 @@ describe("handleInitialise", () => {
   it("1 Record; midpoint on line; train is at station; destination1t is in past; should be idle", () => {
     const now = 2000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -371,7 +371,7 @@ describe("handleInitialise", () => {
   it("1 Record; end of line; train is approaching station; should be moving", () => {
     const now = 0;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -395,7 +395,7 @@ describe("handleInitialise", () => {
   it("1 Record; end of line; train has reached station; should be idle", () => {
     const now = 1000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -417,7 +417,7 @@ describe("handleInitialise", () => {
   it("1 Record; end of line; train reached station in the past; should be idle", () => {
     const now = 2000;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,

@@ -1,7 +1,61 @@
 import * as THREE from "three";
 import Fuse from "fuse.js";
-import type { Network, Positions, Subsection } from "./components/trainLines";
-import type { TrainRecord } from "./types/train";
+import type {
+  Midline,
+  Network,
+  Positions,
+  Subsection,
+} from "./components/trainLines";
+
+export function offsetPositions(positions: Positions[]): Positions[] {
+  return positions.map((p, i) => {
+    const prev = positions[i - 1] ?? p;
+    const next = positions[i + 1] ?? p;
+
+    const tangent = new THREE.Vector3(
+      next.x - prev.x,
+      next.y - prev.y,
+      next.z - prev.z,
+    ).normalize();
+
+    // perpendicular in XY plane
+    const normal = new THREE.Vector3(-tangent.y, tangent.x, 0);
+
+    const h = p.horizontalOffset ?? 0;
+    const v = p.verticalOffset ?? 0;
+
+    return {
+      ...p,
+      x: p.x + normal.x * h,
+      y: p.y + normal.y * h,
+      z: p.z + v,
+    };
+  });
+}
+
+export function buildBidirectionalSubsections(
+  midline: Midline,
+  offset: number,
+): Subsection[] {
+  return [
+    {
+      name: `${midline.name} (Inbound)`,
+      positions: offsetPositions(
+        [...midline.positions].map((p) => ({ ...p, horizontalOffset: offset })),
+      ),
+      type: "inbound",
+    },
+    {
+      name: `${midline.name} (Outbound)`,
+      positions: offsetPositions(
+        [...midline.positions]
+          .reverse()
+          .map((p) => ({ ...p, horizontalOffset: offset })),
+      ),
+      type: "outbound",
+    },
+  ];
+}
 
 // TODO This whole ts needs a comb over.
 export function normaliseNetwork(
@@ -94,14 +148,13 @@ export function buildCurveData(positions: Positions[]) {
   return { curve, stationUs };
 }
 
-export function matchTrainToLineSubsection(
-  trainRecord: TrainRecord,
-  subsection: Subsection,
-): THREE.CatmullRomCurve3 {
-  return subsection.curveData?.curve as THREE.CatmullRomCurve3;
-}
+export type StationWithU = {
+  label: string;
+  normalisedLabel: string;
+  u: number;
+};
 
-export type StationU = {
+export type StationWithUAndT = {
   label: string;
   normalisedLabel: string;
   u: number;
@@ -116,23 +169,32 @@ export const normalise = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-export const createStationMatcher = (stations: StationU[]) => {
+export const createStationMatcher = (stations: StationWithU[]) => {
+  //TODO .test.ts
   const fuse = new Fuse(stations, {
+    getFn: (obj, path) => normalise(obj[path as keyof StationWithU] as string),
+    ignoreLocation: true,
+    includeScore: true,
     keys: ["normalisedLabel"],
     threshold: 0.3,
-    ignoreLocation: true,
-    getFn: (obj, path) => normalise(obj[path as keyof StationU] as string),
   });
 
-  return (stationName: string): StationU | undefined => {
-    // console.log("Matching station:", stationName);
+  return (stationName: string): StationWithU | undefined => {
+    const exactMatch = stations.find(
+      (s) => s.normalisedLabel === normalise(stationName),
+    );
+    if (exactMatch) return exactMatch;
+
     const results = fuse.search(stationName);
-    // console.log(
-    //   "Fuse results:",
-    //   results.map((r) => ({ label: r.item.label, score: r.score }))
-    // );
 
     if (!results.length) return undefined;
+    const bestMatch = results[0];
+    const bestMatchNumber = bestMatch.item.label.match(/\d+/)?.[0];
+    const queryNumber = stationName.match(/\d+/)?.[0];
+
+    if (queryNumber && bestMatchNumber && queryNumber !== bestMatchNumber)
+      return undefined;
+
     const [best, second] = results;
     if (
       second &&

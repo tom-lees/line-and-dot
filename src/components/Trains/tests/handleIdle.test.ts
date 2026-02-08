@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { handleIdle } from "../trainLogic";
 import type { IdleTrainState, SubsectionRuntime } from "../trainTypes";
 import type { CatmullRomCurve3 } from "three";
-import type { StationU } from "../../../utils";
+import type { StationWithUAndT } from "../../../utils";
 
 const mockDestination1Id = "1DestinationId";
 const mockDestination1IdChanged = "1DestinationIdMoved";
@@ -46,7 +46,7 @@ describe("handleIdle", () => {
   it("1 record (destination 1) returns input (idle) state when destination1 details have not changed", () => {
     const now = 0;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 0,
@@ -69,7 +69,7 @@ describe("handleIdle", () => {
   it("1 record (destination 1) returns new (idle) state, with updated values when idle (time) parameters have updated", () => {
     const now = 0;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -95,7 +95,7 @@ describe("handleIdle", () => {
   it("1 record (destination 1) returns new (idle) state, with updated values when moving (position (u) or subsection) parameters have updated", () => {
     const now = 0;
 
-    const destination1: StationU = {
+    const destination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -128,13 +128,13 @@ describe("handleIdle", () => {
   it("2 records (destination 1 & destination 2) return (idle) state, when destination details have not changed", () => {
     const now = 0;
 
-    const mockDestination1: StationU = {
+    const mockDestination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 0,
       u: 0,
     };
-    const mockDestination2: StationU = {
+    const mockDestination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
@@ -168,13 +168,13 @@ describe("handleIdle", () => {
   it("2 records (destination 1 & destination 2) return (idle) state, with updated values when idle (time) parameters have updated", () => {
     const now = 0;
 
-    const mockDestination1: StationU = {
+    const mockDestination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 500,
       u: 0,
     };
-    const mockDestination2: StationU = {
+    const mockDestination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1500,
@@ -203,13 +203,13 @@ describe("handleIdle", () => {
     const now = 0;
     const mockDestination1Id = "timetable[1]=>timetable[0]";
 
-    const mockDestination1: StationU = {
+    const mockDestination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0.25,
     };
-    const mockDestination2: StationU = {
+    const mockDestination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -238,13 +238,13 @@ describe("handleIdle", () => {
     const now = 0;
     const mockDestination1Id = "timetable[1]=>timetable[0]";
 
-    const mockDestination1: StationU = {
+    const mockDestination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0.5,
     };
-    const mockDestination2: StationU = {
+    const mockDestination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -272,13 +272,13 @@ describe("handleIdle", () => {
   it("2 records (destination 1 & destination 2) return (idle) state, when only subsection has changed mid-subsection", () => {
     const now = 0;
 
-    const mockDestination1: StationU = {
+    const mockDestination1: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 1000,
       u: 0.25,
     };
-    const mockDestination2: StationU = {
+    const mockDestination2: StationWithUAndT = {
       label: "",
       normalisedLabel: "",
       t: 2000,
@@ -311,13 +311,13 @@ describe("handleIdle", () => {
 
   //   const now = 0;
 
-  //   const mockDestination1: StationU = {
+  //   const mockDestination1: StationWithUAndT = {
   //     label: "",
   //     normalisedLabel: "",
   //     t: 1000,
   //     u: 0.75,
   //   };
-  //   const mockDestination3: StationU = {
+  //   const mockDestination3: StationWithUAndT = {
   //     label: "",
   //     normalisedLabel: "",
   //     t: 3000,

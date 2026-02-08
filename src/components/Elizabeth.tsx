@@ -44,14 +44,16 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
   // Curve & Station positions for rendering labels
   //
   const elizabethLabelPositions = useMemo(() => {
-    return elizabethSubsections.flatMap(({ curveData }) => {
-      const { curve, stationUs } = curveData;
+    return elizabethSubsections
+      .filter((s) => s.type === "outbound")
+      .flatMap(({ curveData }) => {
+        const { curve, stationUs } = curveData;
 
-      return stationUs.map((s) => ({
-        label: s.label,
-        position: curve.getPointAt(s.u).toArray() as [number, number, number],
-      }));
-    });
+        return stationUs.map((s) => ({
+          label: s.label,
+          position: curve.getPointAt(s.u).toArray() as [number, number, number],
+        }));
+      });
   }, [elizabethSubsections]);
 
   return (
@@ -77,12 +79,12 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
           position={lp.position}
           fontSize={10}
           fontColour="white"
-          rotate="vertical"
+          rotate="diagonal"
         />
       ))}
       {Object.entries(trains.trainData)
         //TODO Filter for testing
-        // .filter(([trainId]) => trainId === "202602067123864")
+        // .filter(([trainId]) => trainId === "202602077623911")
         .map(
           ([trainId, trainArrivalList]) =>
             trainArrivalList.length > 0 && (
