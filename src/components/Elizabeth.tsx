@@ -1,22 +1,63 @@
 import { useMemo, type JSX } from "react";
 import type { Network } from "./trainLines";
-import { buildCurveData, createStationMatcher } from "../utils";
+import { buildSubsectionData, createStationMatcher } from "../utils";
 import { Label } from "./Label";
 import useTrainData from "../hooks/useTrainData";
+import * as THREE from "three";
 import { TrainDot } from "./Trains/TrainDot";
 import type { SubsectionRuntime } from "./Trains/trainTypes";
-// TODO Hayes and Harington two labels overlaping.  drop one lablel.  Label on tag in data or component.
-// TODO Handle stations that reach an NA, they jump off the line, should remain at current u position.
-// TODO Paddington and London Paddington Rail Station breaks logic.
+
 export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
   const trains = useTrainData();
+  const colour = "#800080";
 
   //
   // Generate Catmullcurve & stations' proportions (u) along the curve
   //
   const elizabethSubsections: SubsectionRuntime[] = useMemo(() => {
-    return network.elizabeth.subsections.map((subsection) => {
-      const curveData = buildCurveData(subsection.positions);
+    const stationPositionsMap = new Map<string, THREE.Vector3[]>();
+    const line = network.elizabeth.subsections;
+
+    // TODO Can this be done in App.tsx
+    line.forEach((sub) => {
+      sub.positions.forEach((p) => {
+        if (p.type === "station") {
+          const key = `${p.name}|${sub.type}`; // combine name + type
+          const pos = new THREE.Vector3(p.x, p.y, p.z);
+          if (!stationPositionsMap.has(key)) stationPositionsMap.set(key, []);
+          stationPositionsMap.get(key)!.push(pos);
+        }
+      });
+    });
+
+    const stationAvgPositions = new Map<string, THREE.Vector3>();
+
+    stationPositionsMap.forEach((positions, key) => {
+      if (positions.length > 1) {
+        // only average repeated stations
+        const avg = new THREE.Vector3();
+        positions.forEach((pos) => avg.add(pos));
+        avg.divideScalar(positions.length);
+        stationAvgPositions.set(key, avg);
+      }
+    });
+
+    line.forEach((sub) => {
+      sub.positions.forEach((p) => {
+        if (p.type === "station") {
+          const key = `${p.name}|${sub.type}`;
+          if (stationAvgPositions.has(key)) {
+            const avg = stationAvgPositions.get(key)!;
+            p.x = avg.x;
+            p.y = avg.y;
+            p.z = avg.z;
+          }
+        }
+      });
+    });
+
+    return line.map((subsection) => {
+      const curveData = buildSubsectionData(subsection.positions);
 
       const runtime: SubsectionRuntime = {
         ...subsection,
@@ -27,18 +68,6 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
       return runtime;
     });
   }, [network.elizabeth.subsections]);
-
-  //
-  // Curve to points for rendering line
-  //
-  const elizabethCurvesPoints = useMemo(() => {
-    return elizabethSubsections.map((s) => {
-      const curve = s.curveData.curve;
-      return new Float32Array(
-        curve.getPoints(200).flatMap((p) => [p.x, p.y, p.z]),
-      );
-    });
-  }, [elizabethSubsections]);
 
   //
   // Curve & Station positions for rendering labels
@@ -58,20 +87,61 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
 
   return (
     <>
-      {elizabethCurvesPoints.map((curvePoints, idx) => (
-        <line key={idx}>
-          <bufferGeometry>
-            <bufferAttribute
-              attach={"attributes-position"}
-              array={curvePoints as Float32Array}
-              args={[curvePoints as Float32Array, 3]}
-              itemSize={3}
-              count={curvePoints.length / 3}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial color={"#ffffff"} linewidth={2} />
-        </line>
-      ))}
+      <>
+        {elizabethSubsections.map((s, idx) => {
+          const curve = s.curveData.curve;
+          const radius = 2; // same as tube radius
+
+          // Start and end points
+          const startPoint = curve.getPoint(0);
+          const endPoint = curve.getPoint(1);
+
+          return (
+            <group key={idx}>
+              {/* Solid tube */}
+              <mesh>
+                <tubeGeometry args={[curve, 200, radius, 16, false]} />
+                <meshStandardMaterial
+                  color={colour}
+                  emissive={colour}
+                  roughness={0.5}
+                  metalness={0}
+                  transparent={false}
+                  opacity={1}
+                  side={THREE.DoubleSide} // render both sides
+                />
+              </mesh>
+
+              {/* Sphere at start */}
+              <mesh position={startPoint}>
+                <sphereGeometry args={[radius, 16, 16]} />
+                <meshStandardMaterial
+                  color={colour}
+                  emissive={colour}
+                  roughness={0.5}
+                  metalness={0}
+                  transparent={false}
+                  opacity={1}
+                />
+              </mesh>
+
+              {/* Sphere at end */}
+              <mesh position={endPoint}>
+                <sphereGeometry args={[radius, 16, 16]} />
+                <meshStandardMaterial
+                  color={colour}
+                  emissive={colour}
+                  roughness={0.5}
+                  metalness={0}
+                  transparent={false}
+                  opacity={1}
+                />
+              </mesh>
+            </group>
+          );
+        })}
+      </>
+
       {elizabethLabelPositions.map((lp, i) => (
         <Label
           key={i.toString() + lp.label}
@@ -84,7 +154,7 @@ export const Elizabeth = ({ network }: { network: Network }): JSX.Element => {
       ))}
       {Object.entries(trains.trainData)
         //TODO Filter for testing
-        // .filter(([trainId]) => trainId === "202602077623911")
+        // .filter(([trainId]) => trainId === "202602107124620")
         .map(
           ([trainId, trainArrivalList]) =>
             trainArrivalList.length > 0 && (

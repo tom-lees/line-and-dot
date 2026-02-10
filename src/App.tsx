@@ -7,6 +7,7 @@ import { OrbitControls } from "@react-three/drei";
 import { Elizabeth } from "./components/Elizabeth";
 import { TrainRecordsTable } from "./dev/TrainRecordsTable";
 import useTrainData from "./hooks/useTrainData";
+import { HemisphereLight } from "three";
 
 // TODO Testing should break down and show a count for each inidividual train for each line.
 // TODO Perhaps testing could ALSO have a count for trains arriving at each station in the next 5 minutes
@@ -23,14 +24,6 @@ export default function App() {
   );
 
   const trains = useTrainData();
-  // const elizabethStations =
-  //   normalisedNetwork.elizabeth.subsections[0].positions;
-
-  //TODO Runs four similar scripts that should be consolidated.
-  // const { curve, stationUs } = useMemo(
-  //   () => buildCurveData(elizabethStations),
-  //   [elizabethStations]
-  // );
 
   // TODO Add responsive cameraZ for phone users.  useScreenWith + event listeners (perhaps pixel width < pixel height?)
   const cameraZ = useMemo(() => {
@@ -51,7 +44,14 @@ export default function App() {
               }}
               style={{ width: "100%", height: "100%" }}
             >
-              <color attach="background" args={["#0c0c0f"]} />
+              <color attach="background" args={["#000000"]} />
+              <directionalLight
+                color="#ffffff"
+                intensity={0.6}
+                position={[0, 0, 100]} // directly above
+                target-position={[0, 0, 0]}
+              />
+
               <Elizabeth network={normalisedNetwork} />
               {/* TODO  Pan, 1 finger, left mouse.  Drag, 2 finger, right mouse.  Zoom, pinch, wheel  */}
               <OrbitControls
@@ -60,10 +60,10 @@ export default function App() {
                 enableRotate={true}
                 enableDamping
                 dampingFactor={0.08}
-                minDistance={cameraZ * 0.1}
+                minDistance={cameraZ * 0.01}
                 maxDistance={cameraZ * 5}
-                minPolarAngle={Math.PI / 2}
-                maxPolarAngle={Math.PI / 2}
+                minPolarAngle={0}
+                maxPolarAngle={Math.PI}
               />
             </Canvas>
           </div>

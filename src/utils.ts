@@ -130,7 +130,9 @@ const calculateStationUs = (
   return stationUs;
 };
 
-export function buildCurveData(positions: Positions[]) {
+export function buildLineData(midline: Midline){}
+
+export function buildSubsectionData(positions: Positions[]) {
   const points = positions.map((p) => new THREE.Vector3(p.x, p.y, p.z));
   const curve = new THREE.CatmullRomCurve3(points);
 

@@ -7,7 +7,10 @@ import {
   whitechapel_abbeywood,
   whitechapel_shenfield,
 } from "../data/elizabeth";
-import { buildBidirectionalSubsections, type buildCurveData } from "../utils";
+import {
+  buildBidirectionalSubsections,
+  type buildSubsectionData,
+} from "../utils";
 
 export type Positions =
   | {
@@ -36,7 +39,7 @@ export type Midline = {
 // TODO curveData exists here and on SubsectionRuntime, does it need to be on both
 // TODO Add notes explaining curveData
 export type Subsection = {
-  curveData?: ReturnType<typeof buildCurveData>;
+  curveData?: ReturnType<typeof buildSubsectionData>;
   name: string; // e.g. "Reading → Shenfield"
   positions: Positions[]; // ordered list of positions along the line
   type: "inbound" | "outbound";
@@ -45,6 +48,7 @@ export type Subsection = {
 // TODO Change to TrainLine
 export type Line = {
   name: string; // e.g. "Elizabeth"
+  // line:
   subsections: Subsection[];
 };
 
@@ -52,7 +56,7 @@ export type Network = {
   [lineName: string]: Line;
 };
 
-const trackSpacing = 100;
+const trackSpacing = 250;
 // prettier-ignore
 export const network: Network = {
   elizabeth: {

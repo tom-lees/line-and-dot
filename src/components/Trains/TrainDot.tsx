@@ -1,4 +1,4 @@
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, type JSX } from "react";
 import * as THREE from "three";
 import type { TrainRecord } from "../../types/train";
@@ -70,6 +70,7 @@ export const TrainDot = ({
   speed?: number;
 }): JSX.Element | null => {
   const meshRef = useRef<THREE.Mesh>(null);
+  const { camera } = useThree();
 
   const dotState = useRef<TrainState>({ type: "initialise" });
 
@@ -166,6 +167,23 @@ export const TrainDot = ({
   }, [trainTimetable, subsections]);
 
   useFrame(() => {
+    if (!meshRef.current) return;
+    meshRef.current.lookAt(camera.position);
+
+    const distance = camera.position.distanceTo(meshRef.current.position);
+    // console.log(distance);
+    const mat = meshRef.current.material as THREE.MeshStandardMaterial;
+    const A = 900000;
+    const B = 10;
+    const offset = -1 * (A / (distance * distance) + B);
+    // console.log(offset);
+    mat.polygonOffsetUnits = offset;
+    const fade = Math.max(
+      0,
+      Math.min(1, distance > 200 ? 1 - (distance - 200) / 100 : 1),
+    );
+    console.log(fade);
+    mat.opacity = fade;
     const state = dotState.current;
 
     if (state.type === "initialise") return;
@@ -233,15 +251,16 @@ export const TrainDot = ({
   // const labelText = `${normalise(prevStationName)} ${normalise(trainTimetable[0].stationName)} ${trainTimetable[0].vehicleId.slice(-3)}`;
   return (
     <mesh ref={meshRef}>
-      <sphereGeometry args={[2, 16, 16]} />
-      <meshBasicMaterial color="red" />
+      <circleGeometry args={[1, 32]} /> {/* 2D circle */}
+      <meshStandardMaterial
+        color="white"
+        emissive="white"
+        emissiveIntensity={1}
+        transparent
+        depthWrite={false}
+        depthTest={true} // only render where in front
+        polygonOffset // enable offset
+      />
     </mesh>
   );
 };
-      // <Label
-      //   text={labelText}
-      //   position={[0, 0, 0]}
-      //   fontColour="#FF0000"
-      //   fontSize={12}
-      //   rotate="vertical"
-      // />
