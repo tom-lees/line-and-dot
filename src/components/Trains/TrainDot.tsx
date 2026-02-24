@@ -254,18 +254,22 @@ export const TrainDot = ({
 
   return (
     <mesh ref={meshRef}>
-      <DebugLabel
-        texts={debugText}
-        position={[0, 0, 0]}
-        fontSize={12}
-        rotate={"horizontal"}
-      />
-      <Label
-        text={labelText}
-        position={[0, 0, 0]}
-        fontSize={12}
-        rotate={"vertical"}
-      />
+      {import.meta.env.DEV && (
+        <>
+          <DebugLabel
+            texts={debugText}
+            position={[0, 0, 0]}
+            fontSize={12}
+            rotate={"horizontal"}
+          />
+          <Label
+            text={labelText}
+            position={[0, 0, 0]}
+            fontSize={12}
+            rotate={"vertical"}
+          />
+        </>
+      )}
       <circleGeometry args={[1, 32]} /> {/* 2D circle */}
       <meshStandardMaterial
         color="white"

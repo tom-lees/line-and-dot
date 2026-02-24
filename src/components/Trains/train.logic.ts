@@ -264,12 +264,12 @@ export function handleIdle({
     }
 
     if (subsection !== state.subsection && destination1Id !== state.id) {
-      console.log(
-        "handleIdle: subsection change",
-        state.subsection.name,
-        subsection.name,
-        destination1.label,
-      );
+      // console.log(
+      //   "handleIdle: subsection change",
+      //   state.subsection.name,
+      //   subsection.name,
+      //   destination1.label,
+      // );
       return {
         type: "moving",
         id: destination1Id,
@@ -312,12 +312,12 @@ export function handleIdle({
 
   if (destination1Id !== state.id || subsection !== state.subsection) {
     // TODO Improve record keeping if this ever gets raised
-    console.log(
-      "handleIdle: subsection change",
-      state.subsection.name,
-      subsection.name,
-      destination1.label,
-    );
+    // console.log(
+    //   "handleIdle: subsection change",
+    //   state.subsection.name,
+    //   subsection.name,
+    //   destination1.label,
+    // );
     return {
       type: "idle",
       id: destination1Id,
@@ -384,11 +384,11 @@ export function handleMoving({
     if (state.tEnd - state.tStart <= 0) {
       debug?.(`######## handleMoving: state.tEnd < state.tStart`);
       // console.error("handleMoving train delay: tEnd - tStart < 0");
-      console.log(
-        `handle moving: tEnd before tStart`,
-        state.subsection.name,
-        destination1.label,
-      );
+      // console.log(
+      //   `handle moving: tEnd before tStart`,
+      //   state.subsection.name,
+      //   destination1.label,
+      // );
       return state;
     }
 
