@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { handleInitialise } from "../trainLogic";
-import type { SubsectionRuntime } from "../trainTypes";
+import { handleInitialise } from "../train.logic";
+import type { SubsectionRuntime } from "../train.types";
 import type { CatmullRomCurve3 } from "three";
 import type { StationWithUAndT } from "../../../utils";
 

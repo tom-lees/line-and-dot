@@ -1,4 +1,4 @@
-import type { TrainRecord } from "../types/train";
+import type { TrainRecord } from "../domain/train";
 
 const formatUnixTime = (unix: number | string) => {
   const date = new Date(Number(unix));
@@ -23,6 +23,7 @@ export const TrainRecordsTable = ({
     arrival1: records[1]?.expectedArrival
       ? formatUnixTime(records[1].expectedArrival)
       : "N/A",
+    direction: records[0]?.direction ?? "N/A",
   }));
 
   return (
@@ -45,6 +46,9 @@ export const TrainRecordsTable = ({
             <th className="border border-gray-300 px-4 py-2 text-left">
               1st Arrival
             </th>
+            <th className="border border-gray-300 px-4 py-2 text-left">
+              Direction
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -64,6 +68,9 @@ export const TrainRecordsTable = ({
               </td>
               <td className="border border-gray-300 px-4 py-2">
                 {row.arrival1}
+              </td>
+              <td className="border border-gray-300 px-4 py-2">
+                {row.direction}
               </td>
             </tr>
           ))}

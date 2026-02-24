@@ -1,22 +1,22 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, type JSX } from "react";
 import * as THREE from "three";
-import type { TrainRecord } from "../../types/train";
 import {
   findPreviousSubsectionAndStationDetails,
   findSubsectionAndStationDetails,
   handleIdle,
   handleInitialise,
   handleMoving,
-} from "./trainLogic";
+} from "./train.logic";
 import type {
   IdleTrainState,
   MovingTrainState,
   SubsectionRuntime,
   TrainState,
-} from "./trainTypes";
-import { Label } from "../Label";
-import { normalise } from "../../utils";
+} from "./train.types";
+import type { TimetableStore } from "../../data/train/train.service.types";
+import { DebugLabel } from "../Label/DebugLabel";
+import { Label } from "../Label/Label";
 
 // TODO Add timetracker.  If train has been sationary for longer time fade out.
 // TODO How to handle object delection, is that in parent.
@@ -34,97 +34,106 @@ import { normalise } from "../../utils";
 // TODO Logic for times between stations and train velocities
 // TODO Start of model, estimating the position between station based on arrival times
 //      This can be a rough estimate of times between stations hardcoded.
-// TODO Popup or console log/error when there is not a station match.
-// TODO This is running at 60 frames per second... but what if somes cpu ain't
-// TODO Farrinddon => London Liverpool Street breaks
-// TODO Test a delayed train.  Add tags with tEnd times and if tEnd changes indicate somehow.
+export const tUnixToTimeString = (unix: number | undefined) =>
+  unix &&
+  new Date(unix).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 
-// TODO Del once trainLogic complete
-// function findSubsectionForNextStations(
-//   nextName: string,
-//   followingName: string,
-//   subsections: SubsectionRuntime[],
-// ) {
-//   return subsections
-//     .map((sub) => {
-//       const next = sub.stationMatcher(nextName);
-//       const following = sub.stationMatcher(followingName);
-//       if (!next || !following) {
-//         return null;
-//       }
-//       if (next.u >= following.u) {
-//         return null;
-//       }
-//       // console.log( "findSubsectionForNextStations - subsection:", sub.name, next, following,);
-//       return { subsection: sub, next, following };
-//     })
-//     .filter(Boolean)[0]; // first valid match
-// }
+const uRounded = (u: number | undefined) => u && Math.round(u * 100) / 100;
+
+const nameNormalised = (name: string | undefined) =>
+  name && name.replace("Underground Station", "").replace("Rail Station", "");
 
 export const TrainDot = ({
   subsections,
-  trainTimetable,
+  trainStore,
 }: {
   subsections: SubsectionRuntime[];
-  trainTimetable: TrainRecord[];
-  speed?: number;
+  trainStore: TimetableStore;
 }): JSX.Element | null => {
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
+  const MAX_DEBUG_LINES = 5;
+  const [debugText, setDebugText] = useState<string[]>([]);
+  const appendDebugLine = (newLine: string) => {
+    const timestamp = tUnixToTimeString(Date.now());
+    const newLineWithTime = `${timestamp} ${newLine}`;
+    setDebugText((prev) => {
+      const updated = [...prev, newLineWithTime];
+      if (updated.length > MAX_DEBUG_LINES) {
+        updated.shift();
+      }
+      return updated;
+    });
+  };
+
   const dotState = useRef<TrainState>({ type: "initialise" });
 
   // TODO Testing
-  const prevTrainTimetable = useRef<TrainRecord[]>([]);
-  const [prevStationName, setPrevStationName] = useState<string>("");
-  useEffect(() => {
-    const curr = trainTimetable;
-    const prev = prevTrainTimetable.current;
-    if (prev.length > 0 && curr.length > 0 && curr[0].id !== prev[0].id) {
-      setPrevStationName(prev[0].stationName);
-    }
-    prevTrainTimetable.current = curr;
-  }, [trainTimetable]);
+  // const prevTrainTimetable = useRef<TrainRecord[]>([]);
+  // const [prevStationName, setPrevStationName] = useState<string>("");
+  // useEffect(() => {
+  //   const curr = trainStore.timetable;
+  //   const prev = prevTrainTimetable.current;
+  //   if (prev.length > 0 && curr.length > 0 && curr[0].id !== prev[0].id) {
+  //     setPrevStationName(prev[0].stationName);
+  //   }
+  //   prevTrainTimetable.current = curr;
+  // }, [trainStore]);
+
+  // useEffect(() => {
+
+  //   const onVisibilityChange = () => {
+  //     if (document.visibilityState === "visible") {
+  //       dotState.current = { type: "initialise" };
+  //     }
+  //   };
+  //   document.addEventListener("visibilitychange", onVisibilityChange);
+  //   return () =>
+  //     document.removeEventListener("visibilitychange", onVisibilityChange);
+  // }, []);
 
   useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        dotState.current = { type: "initialise" };
-      }
-    };
+    // appendDebugLine(
+    //   `---- tt0: ${trainStore.timetable[0].stationName} - ${trainStore.timetable[0].direction}`,
+    // );
 
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, []);
-
-  useEffect(() => {
     const now = Date.now();
 
     let subsectionAndStationDetails = findSubsectionAndStationDetails({
       subsections,
-      trainTimetable,
+      trainStore,
     });
 
-    //TODO Error log which subsections are failing
+    appendDebugLine(
+      `---- TT: stationName: ${nameNormalised(trainStore.timetable[0].stationName)}    timeEdit: ${tUnixToTimeString(trainStore.timetable[0].timeEdit)}    expectedArrival: ${tUnixToTimeString(trainStore.timetable[0].expectedArrival)}    timeToLive: ${tUnixToTimeString(trainStore.timetable[0].timeToLive)}    timeToStation: ${tUnixToTimeString(trainStore.timetable[0].timeToStation)}`,
+    );
+    appendDebugLine(
+      `---- d1: ${nameNormalised(subsectionAndStationDetails?.destination1.label)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination1?.t)}    d2: ${nameNormalised(subsectionAndStationDetails?.destination2?.label)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination2?.t)}`,
+    );
+
     if (!subsectionAndStationDetails) {
-      // console.log("no subsection match");
+      // const nextTwoStations = `${nameNormalised(trainStore.timetable[0].stationName)} ${trainStore.timetable[0].direction} ${nameNormalised(trainStore.timetable[1]?.stationName)}`;
+      // appendDebugLine(`#### no sub match: ${nextTwoStations}`);
       return;
     }
-    // console.log("useEffect idle:", subsectionAndStationDetails.subsection.name);
 
     // If destination1 u + uAdjustment is less than 0,
     // the train is before that subsection of the line.
     // So we find the previous subsection.
     // (If does not exist, train is at start of line.)
     // TODO Estimate of line length (100), will not apply to all lines
+    // TODO This estimate is for the longest line and may
     const uAdjustment =
       (subsectionAndStationDetails.destination1.t - now) / (100 * 60 * 1000);
     if (subsectionAndStationDetails.destination1.u - uAdjustment < 0) {
-      // console.log("prev");
       const prev = findPreviousSubsectionAndStationDetails({
         subsections,
-        trainTimetable,
+        trainTimetable: trainStore.timetable,
       });
       if (prev) subsectionAndStationDetails = prev;
     }
@@ -132,49 +141,77 @@ export const TrainDot = ({
     const { destination1, destination1Id, destination2, subsection } =
       subsectionAndStationDetails;
 
+    if (destination1.t && destination2?.t && destination1.t > destination2.t) {
+      appendDebugLine(
+        `#### timetable: ${nameNormalised(trainStore.timetable[0].stationName)} ${tUnixToTimeString(trainStore.timetable[0].expectedArrival)} ${nameNormalised(trainStore.timetable[1].stationName)} ${tUnixToTimeString(trainStore.timetable[1].expectedArrival)}`,
+      );
+    }
     dotState.current = (() => {
       switch (dotState.current.type) {
         case "initialise": {
-          return handleInitialise({
+          appendDebugLine(
+            `---- case initialise: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+          );
+          const trainState = handleInitialise({
             destination1,
             destination1Id,
             now,
             subsection,
             destination2,
           });
+          appendDebugLine(
+            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+          );
+          return trainState;
         }
-        case "idle":
-          return handleIdle({
+        case "idle": {
+          appendDebugLine(
+            `---- case idle: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+          );
+          const trainState = handleIdle({
             destination1,
             destination1Id,
             now,
             state: dotState.current as IdleTrainState,
             subsection,
             destination2,
+            debug: appendDebugLine,
           });
-
-        case "moving":
-          return handleMoving({
+          appendDebugLine(
+            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+          );
+          return trainState;
+        }
+        case "moving": {
+          appendDebugLine(
+            `---- case moving: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+          );
+          const trainState = handleMoving({
             destination1,
             destination1Id,
             destination2,
             now,
             state: dotState.current as MovingTrainState,
             subsection,
+            debug: appendDebugLine,
           });
+          appendDebugLine(
+            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+          );
+          return trainState;
+        }
       }
     })();
-  }, [trainTimetable, subsections]);
+  }, [trainStore, subsections]);
 
   useFrame(() => {
     if (!meshRef.current) return;
     meshRef.current.lookAt(camera.position);
 
     const distance = camera.position.distanceTo(meshRef.current.position);
-    // console.log(distance);
     const mat = meshRef.current.material as THREE.MeshStandardMaterial;
-    const A = 900000;
-    const B = 10;
+    const A = 33000000;
+    const B = 100;
     const offset = -1 * (A / (distance * distance) + B);
     // console.log(offset);
     mat.polygonOffsetUnits = offset;
@@ -182,14 +219,18 @@ export const TrainDot = ({
       0,
       Math.min(1, distance > 200 ? 1 - (distance - 200) / 100 : 1),
     );
-    console.log(fade);
     mat.opacity = fade;
     const state = dotState.current;
 
-    if (state.type === "initialise") return;
+    if (state.type === "initialise") {
+      appendDebugLine(`frame: dotState initialise exit`);
+      return;
+    }
 
     if (state.type === "idle") {
-      // console.log("useframe idle:", state.subsection.name);
+      // appendDebugLine(
+      //   `frame: dotState idle - set pos to state.uStart - ${uRounded(state.uStart)}`,
+      // );
       const pos = state.subsection.curveData.curve.getPointAt(state.uStart);
       if (meshRef.current) meshRef.current.position.set(pos.x, pos.y, pos.z);
     }
@@ -219,38 +260,23 @@ export const TrainDot = ({
   if (dotState.current.type === "initialise") {
     return null;
   }
-  //TODO Testing remove after
-  // if (dotState.current.type === "idle") {
-  //   return null;
-  // }
 
-  // const round2 = (num: number): number => Math.round(num * 100) / 100;
+  const labelText = `${trainStore.timetable[0].vehicleId.slice(-4)}`;
 
-  // TODO Learn fromEntries and object.entries.  I guess it is the rebuilding of an object.
-  // const { tStartRounded, tEndRounded } = {
-  //   //   // uStartRounded: round2(dotState.current.uStart!),
-  //   //   // uEndRounded: round2(dotState.current.uEnd!),
-  //   tStartRounded: new Date(dotState.current.tStart!).toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //     second: "2-digit",
-  //   }),
-  //   tEndRounded: new Date(dotState.current.tEnd!).toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //     second: "2-digit",
-  //   }),
-  // };
-
-  // // const isOnLegText = dotState.current.isOnLeg ? "Go" : "Stop";
-  // const uValuesText = `u [${uStartRounded}, ${uEndRounded}]`;
-  // // const tValuesText = `t [${tStartRounded}, ${tEndRounded}]`;
-
-  // const labelText = `${isOnLegText} ${tValuesText} ${trainTimetable[0].vehicleId}`;
-  // const labelText = `${trainTimetable[0].vehicleId.slice(-3)} ${uValuesText}`;
-  // const labelText = `${normalise(prevStationName)} ${normalise(trainTimetable[0].stationName)} ${trainTimetable[0].vehicleId.slice(-3)}`;
   return (
     <mesh ref={meshRef}>
+      <DebugLabel
+        texts={debugText}
+        position={[0, 0, 0]}
+        fontSize={12}
+        rotate={"horizontal"}
+      />
+      <Label
+        text={labelText}
+        position={[0, 0, 0]}
+        fontSize={12}
+        rotate={"vertical"}
+      />
       <circleGeometry args={[1, 32]} /> {/* 2D circle */}
       <meshStandardMaterial
         color="white"

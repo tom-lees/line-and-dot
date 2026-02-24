@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { TrainRecord } from "../types/train";
+import type { TrainRecord } from "../domain/train";
 import useTrainData from "./useTrainData";
 
 // TODO Make function universal, not just R 2 S line.
@@ -34,7 +34,7 @@ export default function useSingleTrain(): {
     if (selectedTrainId) {
       const records = trainData[selectedTrainId];
       setSingleTrainData(
-        records && records.length > 0 ? { [selectedTrainId]: records } : null
+        records && records.length > 0 ? { [selectedTrainId]: records } : null,
       );
       return;
     }
@@ -45,7 +45,7 @@ export default function useSingleTrain(): {
         ([, records]) =>
           records.length > 3 &&
           records[0].destinationName.toLowerCase().includes("shenfield") &&
-          records[0].timeToStation <= Date.now() + 60_000
+          records[0].timeToStation <= Date.now() + 60_000,
       );
 
     const movingTrain =

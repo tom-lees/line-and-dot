@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { trainService } from "../data/trainService";
-import type { TrainRecord } from "../types/train";
+import { trainService } from "../data/train/train.service";
+import type { TimetableStore } from "../data/train/train.service.types";
 
 export default function useTrainData() {
-  const [data, setData] = useState<Record<string, TrainRecord[]>>({});
+  const [data, setData] = useState<Record<string, TimetableStore>>({});
 
   useEffect(() => {
     trainService.start();
@@ -11,18 +11,13 @@ export default function useTrainData() {
       setData(data);
     });
 
-    const interval = setInterval(() => {
-      trainService.refresh();
-    }, 10000); // refresh every 10 seconds
-
     return () => {
       unsubscribe();
-      clearInterval(interval);
     };
   }, []);
 
   return {
-    trainData: data,
+    data,
     refresh: () => trainService.refresh(),
   };
 }

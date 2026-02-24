@@ -1,14 +1,15 @@
-import type { TrainRecord } from "../../../types/train";
-import { normalise, type StationWithUAndT } from "../../../utils";
-import { findSubsectionAndStationDetails } from "../trainLogic";
-import type { SubsectionRuntime } from "../trainTypes";
+import { normaliseName } from "../../../App/station.name.normalise";
+import type { StationWithUAndT } from "../../../App/station.types";
+import type { TrainRecord } from "../../../domain/train";
+import { findSubsectionAndStationDetails } from "../train.logic";
+import type { SubsectionRuntime } from "../train.types";
 import type { CatmullRomCurve3 } from "three";
 
 // Helper to create a StationWithUAndT
 function createStation(label: string, u: number): StationWithUAndT {
   return {
     label,
-    normalisedLabel: normalise(label),
+    normalisedLabel: normaliseName(label),
     u,
     t: 1000,
   };

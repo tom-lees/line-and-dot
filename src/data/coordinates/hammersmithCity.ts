@@ -1,0 +1,37 @@
+import type { Midline } from "../../domain/lines";
+
+//prettier-ignore
+export const barking_hammersmith: Midline = {
+  name: "barking ↔ hammersmith (h&c)",
+  positions: [
+    {type:'station',name:'Barking Underground Station',x:544358.8052,y:184382.179,z:6},
+    {type:'station',name:'East Ham Underground Station',x:542463.3563,y:184275.4352,z:6},
+    {type:'station',name:'Upton Park Underground Station',x:541254.2061,y:183793.485200001,z:5},
+    {type:'station',name:'Plaistow Underground Station',x:540003.2462,y:183297.1438,z:2},
+    {type:'station',name:'West Ham Underground Station',x:539130.9809,y:182944.644300001,z:5},
+    {type:'station',name:'Bromley-by-Bow Underground Station',x:538049.5634,y:182523.513599999,z:12},
+    {type:'station',name:'Bow Road Underground Station',x:537089.8973,y:182735.951300001,z:7},
+    {type:'station',name:'Mile End Underground Station',x:536500.7831,y:182534.4935,z:5},
+    {type:'station',name:'Stepney Green Underground Station',x:535621.3116,y:182135.557,z:3},
+    {type:'station',name:'Whitechapel Underground Station',x:534644.6261,y:181850.3379,z:9},
+    {type:'station',name:'Aldgate East Underground Station',x:533936.1921,y:181374.788000001,z:5},
+    {type:'station',name:'Liverpool Street Underground Station',x:533093.853,y:181566.9186,z:7},
+    {type:'station',name:'Moorgate Underground Station',x:532667.8252,y:181668.244999999,z:9},
+    {type:'station',name:'Barbican Underground Station',x:532004.2025,y:181856.329700001,z:9},
+    {type:'station',name:'Farringdon Underground Station',x:531559.9989,y:181873.9267,z:7},
+    {type:'station',name:"King's Cross St. Pancras Underground Station",x:530174.7976,y:182874.774700001,z:9},
+    {type:'station',name:'Euston Square Underground Station',x:529416.5999,y:182393.381999999,z:18.1},
+    {type:'station',name:'Great Portland Street Underground Station',x:528837.973,y:182179.857899999,z:21},
+    {type:'station',name:'Baker Street Underground Station',x:527954.6729,y:182063.567500001,z:18.85,verticalOffset:-0.1},
+    {type:'station',name:'Edgware Road (Circle Line) Underground Station',x:527220.0675,y:181696.8814,z:24.8},
+    {type:'station',name:'Paddington (H&C Line)-Underground',x:526475.5,y:181490,z:22.4},
+    {type:'station',name:'Royal Oak Underground Station',x:525833.8943,y:181570.6391,z:21},
+    {type:'station',name:'Westbourne Park Underground Station',x:524901.4238,y:181755.9263,z:22.5},
+    {type:'station',name:'Ladbroke Grove Underground Station',x:524234.8749,y:181339.0615,z:19.4},
+    {type:'station',name:'Latimer Road Underground Station',x:523762.9916,y:180897.8333,z:14},
+    {type:'station',name:'Wood Lane Underground Station',x:523373.9519,y:180519.177100001,z:13.1},
+    {type:'station',name:"Shepherd's Bush Market Underground Station",x:523197.0859,y:180064.2324,z:11.9},
+    {type:'station',name:'Goldhawk Road Underground Station',x:523183.913,y:179607.8456,z:11},
+    {type:'station',name:'Hammersmith (H&C Line) Underground Station',x:523325.1097,y:178697.986300001,z:4.4},
+  ],
+};

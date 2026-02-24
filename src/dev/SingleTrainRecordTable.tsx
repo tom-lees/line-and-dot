@@ -1,4 +1,4 @@
-import type { TrainRecord } from "../types/train";
+import type { TrainRecord } from "../domain/train";
 
 export const SingleTrainRecordTable = ({
   trainId,
@@ -42,7 +42,7 @@ export const SingleTrainRecordTable = ({
                           </td>
                           <td className="px-3 py-1 font-mono">
                             {new Date(
-                              Number(record.timeToLive)
+                              Number(record.timeToLive),
                             ).toLocaleTimeString()}
                           </td>
 

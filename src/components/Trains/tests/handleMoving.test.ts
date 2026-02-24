@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { handleMoving } from "../trainLogic";
-import type { MovingTrainState, SubsectionRuntime } from "../trainTypes";
+import { handleMoving } from "../train.logic";
+import type { MovingTrainState, SubsectionRuntime } from "../train.types";
 import type { CatmullRomCurve3 } from "three";
-import type { StationWithUAndT } from "../../../utils";
 
 const mockdestination1Id = "1DestinationId";
 const mockSubsection: SubsectionRuntime = {
   name: "mock1",
   positions: [{ type: "track", x: 0, y: 0, z: 0 }],
+  type:'inbound',
   curveData: {
     curve: {} as CatmullRomCurve3,
     stationUs: [],
