@@ -167,9 +167,7 @@ export const TrainLine = ({
         ([trainId, trainStore]) =>
           trainStore.timetable.length > 0 && (
             <TrainDot
-              //TODO Add back in
-              // key={`${trainId}-${dotResetToken}`}
-              key={`${trainId}-0`}
+              key={`${trainId}-${dotResetToken}`}
               subsections={subsections}
               trainStore={trainStore}
             />

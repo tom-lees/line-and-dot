@@ -7,7 +7,7 @@ import type { TrainRecord } from "../../domain/train";
 import { normaliseName } from "../../App/station.name.normalise";
 import type { StationWithUAndT } from "../../App/station.types";
 import type { TimetableStore } from "../../data/train/train.service.types";
-import { tUnixToTimeString } from "./TrainDot";
+import { tUnixToTimeString } from "./traindot.utils";
 
 export function findSubsectionAndStationDetails(
   // TODO Testing which includes the appended t values

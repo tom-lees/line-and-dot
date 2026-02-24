@@ -17,6 +17,7 @@ import type {
 import type { TimetableStore } from "../../data/train/train.service.types";
 import { DebugLabel } from "../Label/DebugLabel";
 import { Label } from "../Label/Label";
+import { nameNormalised, tUnixToTimeString } from "./traindot.utils";
 
 // TODO Add timetracker.  If train has been sationary for longer time fade out.
 // TODO How to handle object delection, is that in parent.
@@ -34,18 +35,6 @@ import { Label } from "../Label/Label";
 // TODO Logic for times between stations and train velocities
 // TODO Start of model, estimating the position between station based on arrival times
 //      This can be a rough estimate of times between stations hardcoded.
-export const tUnixToTimeString = (unix: number | undefined) =>
-  unix &&
-  new Date(unix).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-
-const uRounded = (u: number | undefined) => u && Math.round(u * 100) / 100;
-
-const nameNormalised = (name: string | undefined) =>
-  name && name.replace("Underground Station", "").replace("Rail Station", "");
 
 export const TrainDot = ({
   subsections,
