@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useMemo, useState } from "react";
 // import { ApiSummary } from "./dev/ApiSummary";
-import { OrbitControls } from "@react-three/drei";
 // import { TrainRecordsTable } from "./dev/TrainRecordsTable";
 import useTrainData from "../hooks/useTrainData";
 import { TrainNetwork } from "../components/Network/TrainNetwork";
@@ -13,6 +12,8 @@ import type { VisibleTrainLinesWithOptionalLabels } from "../components/Filter/f
 import { averageStationPositions } from "../components/Label/label.positions";
 import { Label } from "../components/Label/Label";
 import type { Network } from "../domain/lines";
+import InstructionsPopup from "../components/InstructionsPopup/InstructionsPopup";
+import { OrbitControls } from "@react-three/drei";
 
 // TODO Testing should break down and show a count for each inidividual train for each line.
 // TODO Perhaps testing could ALSO have a count for trains arriving at each station in the next 5 minutes
@@ -35,22 +36,35 @@ export default function App() {
       document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
+  const [showInstructions, setShowInstructions] = useState(true);
+  // Buttons & panels are hidden whilst instructions are on screen
+  const [showButtonsAndPanels, setShowButtonsAndPanels] = useState(false);
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreenWidth = () => setIsMobile(window.innerWidth <= 768);
+    checkScreenWidth();
+    window.addEventListener("resize", checkScreenWidth);
+    return () => window.removeEventListener("resize", checkScreenWidth);
+  }, []);
+
   const [
     visibleTrainLinesWithOptionalLabels,
     setVisibleTrainLinesWithOptionalLabels,
   ] = useState<VisibleTrainLinesWithOptionalLabels>({
-    bakerloo: { line: true, label: true },
-    central: { line: false, label: false },
-    circle: { line: false, label: false },
-    district: { line: false, label: false },
-    elizabeth: { line: false, label: false },
-    hammersmithCity: { line: false, label: false },
-    jubilee: { line: false, label: false },
-    metropolitan: { line: false, label: false },
-    northern: { line: false, label: false },
-    piccadilly: { line: false, label: false },
-    victoria: { line: false, label: false },
-    waterlooCity: { line: false, label: false },
+    bakerloo: { line: true, label: false },
+    central: { line: true, label: false },
+    circle: { line: true, label: false },
+    district: { line: true, label: false },
+    elizabeth: { line: true, label: false },
+    hammersmithCity: { line: true, label: false },
+    jubilee: { line: true, label: false },
+    metropolitan: { line: true, label: false },
+    northern: { line: true, label: false },
+    piccadilly: { line: true, label: false },
+    victoria: { line: true, label: false },
+    waterlooCity: { line: true, label: false },
   });
 
   const normalisedNetwork = useMemo(() => normaliseNetwork(network), []);
@@ -91,14 +105,25 @@ export default function App() {
   return (
     <main className="relative w-full h-full">
       <div className="w-full h-full overflow-hidden">
-        <div className="absolute top-4 left-4 z-100">
-          <TrainFilter
-            visibleTrainLinesWithOptionalLabels={
-              visibleTrainLinesWithOptionalLabels
-            }
-            onChange={setVisibleTrainLinesWithOptionalLabels}
+        {showInstructions && (
+          <InstructionsPopup
+            isMobile={isMobile}
+            onClose={() => {
+              setShowInstructions(false);
+              setShowButtonsAndPanels(true);
+            }}
           />
-        </div>
+        )}
+        {showButtonsAndPanels && (
+          <div className="absolute top-4 left-4 z-100">
+            <TrainFilter
+              visibleTrainLinesWithOptionalLabels={
+                visibleTrainLinesWithOptionalLabels
+              }
+              onChange={setVisibleTrainLinesWithOptionalLabels}
+            />
+          </div>
+        )}
         <Canvas
           className="absolute inset-0 z-0"
           camera={{
@@ -142,9 +167,11 @@ export default function App() {
             enableDamping
             dampingFactor={0.08}
             minDistance={cameraZ * 0.1}
-            maxDistance={cameraZ * 2}
+            maxDistance={cameraZ * 5}
             minPolarAngle={0}
             maxPolarAngle={Math.PI / 2}
+            panSpeed={1}
+            rotateSpeed={1}
             zoomSpeed={1}
             mouseButtons={{
               LEFT: THREE.MOUSE.PAN,

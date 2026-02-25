@@ -1,40 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState  } from "react";
 import { LINE_IDS } from "../Line/line.constants";
 import { LINE_COLOURS } from "../Line/line.colours";
 import type { VisibleTrainLinesWithOptionalLabels } from "./filter.types";
 
-type TrainFilterProps = {
-  visibleTrainLinesWithOptionalLabels: VisibleTrainLinesWithOptionalLabels;
-  onChange: (updated: VisibleTrainLinesWithOptionalLabels) => void;
-};
-
 export const TrainFilter = ({
   visibleTrainLinesWithOptionalLabels,
   onChange,
-}: TrainFilterProps) => {
-  const [isOpen, setIsOpen] = useState(false); // mobile toggle
-
-  useEffect(() => {
-    // Function to check screen width and update isOpen
-    const checkScreenWidth = () => {
-      if (window.innerWidth >= 768) {
-        setIsOpen(true); // Set to true for medium screens and above
-      } else {
-        setIsOpen(false); // Set to false for mobile screens
-      }
-    };
-
-    // Check on mount
-    checkScreenWidth();
-
-    // Add resize event listener
-    window.addEventListener("resize", checkScreenWidth);
-
-    // Cleanup event listener on unmount
-    return () => {
-      window.removeEventListener("resize", checkScreenWidth);
-    };
-  }, []);
+}: {
+  visibleTrainLinesWithOptionalLabels: VisibleTrainLinesWithOptionalLabels;
+  onChange: (updated: VisibleTrainLinesWithOptionalLabels) => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(() => window.innerWidth >= 768);
 
   const toggleLine = (lineId: keyof VisibleTrainLinesWithOptionalLabels) => {
     const current = visibleTrainLinesWithOptionalLabels[lineId];
