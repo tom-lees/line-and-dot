@@ -19,12 +19,18 @@ export const InfoHireMe = ({
 
       {/* Panel */}
       {isOpen && (
-        <div className="bg-white px-5 pt-4 pb-6 rounded-lg shadow-md flex flex-col gap-8 w-[min(90vw,420px)] max-h-[80vh] overflow-y-auto">
+        <div
+          className="
+      bg-white px-5 pt-4 pb-6 rounded-lg shadow-md flex flex-col gap-8 
+      w-full md:w-1/3    max-h-[calc(100vh-8rem)]       overflow-y-auto
+
+    "
+        >
           {/* Info Section */}
           {infoText}
 
           {/* Divider */}
-          <div className="border-t border-gray-200" />
+          {/* <div className="border-t border-gray-200" /> */}
 
           {/* Hire Me Section */}
           {hireMeText}

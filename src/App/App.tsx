@@ -147,7 +147,7 @@ export default function App() {
             </div>
 
             {/* Right button: Info / Hire Me */}
-            <div className="flex min-w-fit">
+            <div className="flex min-w-fit max-h">
               <InfoHireMe
                 isOpen={isInfoHireMeOpen}
                 setIsOpen={() => {
