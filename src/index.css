@@ -4,4 +4,17 @@ html,
 body,
 #root {
   @apply h-full m-0 p-0;
+
+  /* Prevent text selection and long-press menu */
+  touch-action: none; /* Prevent default touch gestures */
+  -webkit-user-select: none; /* Disable text selection on iOS */
+  user-select: none; /* Disable text selection in general */
+  -webkit-touch-callout: none; /* Disable iOS long-press menu */
+}
+
+canvas {
+  touch-action: none; /* Ensure canvas ignores default gestures */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }

@@ -7,13 +7,14 @@ import useTrainData from "../hooks/useTrainData";
 import { TrainNetwork } from "../components/Network/TrainNetwork";
 import { network } from "../components/Line/line.builder";
 import { normaliseNetwork } from "./network.normalise";
-import { TrainFilter } from "../components/Filter/Filter";
+import { TrainFilter } from "../components/Filter/TrainFilter";
 import type { VisibleTrainLinesWithOptionalLabels } from "../components/Filter/filter.types";
 import { averageStationPositions } from "../components/Label/label.positions";
 import { Label } from "../components/Label/Label";
 import type { Network } from "../domain/lines";
 import InstructionsPopup from "../components/InstructionsPopup/InstructionsPopup";
 import { OrbitControls } from "@react-three/drei";
+import { InfoHireMe } from "../components/InfoHireMe/InfoHireMe";
 
 // TODO Testing should break down and show a count for each inidividual train for each line.
 // TODO Perhaps testing could ALSO have a count for trains arriving at each station in the next 5 minutes
@@ -21,7 +22,7 @@ import { OrbitControls } from "@react-three/drei";
 // TODO Does 3js need resize logic, seems to work as is.
 
 export default function App() {
-  const screenWidth = 1000;
+  const modelWidthPx = 1000;
 
   const [dotResetToken, setDotResetToken] = useState(0);
 
@@ -34,6 +35,13 @@ export default function App() {
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+
+  useEffect(() => {
+    const preventContextMenu = (e: Event) => e.preventDefault();
+    document.addEventListener("contextmenu", preventContextMenu);
+    return () =>
+      document.removeEventListener("contextmenu", preventContextMenu);
   }, []);
 
   const [showInstructions, setShowInstructions] = useState(true);
@@ -100,7 +108,9 @@ export default function App() {
     });
   }
 
-  const cameraZ = useMemo(() => screenWidth * 0.5, []);
+  const cameraZ = useMemo(() => {
+    return isMobile ? 1.5 * modelWidthPx : modelWidthPx * 0.5;
+  }, [isMobile]);
 
   return (
     <main className="relative w-full h-full">
@@ -115,14 +125,21 @@ export default function App() {
           />
         )}
         {showButtonsAndPanels && (
-          <div className="absolute top-4 left-4 z-100">
-            <TrainFilter
-              visibleTrainLinesWithOptionalLabels={
-                visibleTrainLinesWithOptionalLabels
-              }
-              onChange={setVisibleTrainLinesWithOptionalLabels}
-            />
-          </div>
+          <>
+            <div className="absolute top-4 left-4 z-100">
+              <TrainFilter
+                visibleTrainLinesWithOptionalLabels={
+                  visibleTrainLinesWithOptionalLabels
+                }
+                onChange={setVisibleTrainLinesWithOptionalLabels}
+              />
+            </div>
+            <div className="absolute top-4 right-4 z-100">
+              <InfoHireMe 
+              // onChange={() => {}} 
+              />
+            </div>
+          </>
         )}
         <Canvas
           className="absolute inset-0 z-0"
@@ -131,7 +148,7 @@ export default function App() {
             fov: 50,
             up: [0, 0, 1],
             near: 0.3,
-            far: 2000,
+            far: 5000,
           }}
           style={{ width: "100%", height: "100%" }}
         >
@@ -166,8 +183,8 @@ export default function App() {
             enableRotate={true}
             enableDamping
             dampingFactor={0.08}
-            minDistance={cameraZ * 0.1}
-            maxDistance={cameraZ * 5}
+            minDistance={modelWidthPx * 0.1}
+            maxDistance={modelWidthPx * 3}
             minPolarAngle={0}
             maxPolarAngle={Math.PI / 2}
             panSpeed={1}

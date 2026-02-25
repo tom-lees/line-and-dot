@@ -1,4 +1,4 @@
-import { useState  } from "react";
+import { useState } from "react";
 import { LINE_IDS } from "../Line/line.constants";
 import { LINE_COLOURS } from "../Line/line.colours";
 import type { VisibleTrainLinesWithOptionalLabels } from "./filter.types";
@@ -81,11 +81,11 @@ export const TrainFilter = ({
                   checked={label}
                   disabled={!line}
                   onChange={() => toggleLabel(lineId)}
-                  className="w-6 h-6 md:w-5 md:h-5 rounded-sm appearance-none border-2 border-gray-300
+                  className="w-6 h-6 rounded-sm appearance-none border-2 border-gray-300
                            checked:border-none checked:bg-gray-700 checked:flex checked:items-center checked:justify-center"
                 />
                 <span
-                  className="pointer-events-none absolute w-6 h-6 md:w-5 md:h-5 flex items-center justify-center"
+                  className="pointer-events-none absolute w-6 h-6 flex items-center justify-center"
                   style={{
                     color: label ? "white" : "transparent",
                     fontSize: 12,
@@ -102,7 +102,7 @@ export const TrainFilter = ({
                   type="checkbox"
                   checked={line}
                   onChange={() => toggleLine(lineId)}
-                  className="w-6 h-6 md:w-5 md:h-5 rounded-sm appearance-none border-2 border-gray-300
+                  className="w-6 h-6 rounded-sm appearance-none border-2 border-gray-300
                            checked:border-none checked:bg-[var(--line-color)] checked:flex checked:items-center checked:justify-center"
                   style={
                     {
@@ -111,7 +111,7 @@ export const TrainFilter = ({
                   }
                 />
                 <span
-                  className="pointer-events-none absolute w-6 h-6 md:w-5 md:h-5 flex items-center justify-center"
+                  className="pointer-events-none absolute w-6 h-6 flex items-center justify-center"
                   style={{
                     color: line ? "white" : "transparent",
                     fontSize: 12,
