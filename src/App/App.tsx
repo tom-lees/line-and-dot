@@ -50,6 +50,11 @@ export default function App() {
 
   const [isMobile, setIsMobile] = useState(false);
 
+  const [isFilterOpen, setIsFilterOpen] = useState(
+    () => window.innerWidth >= 768,
+  );
+  const [isInfoHireMeOpen, SetIsInfoHireMeOpen] = useState(false);
+
   useEffect(() => {
     const checkScreenWidth = () => setIsMobile(window.innerWidth <= 768);
     checkScreenWidth();
@@ -125,21 +130,33 @@ export default function App() {
           />
         )}
         {showButtonsAndPanels && (
-          <>
-            <div className="absolute top-4 left-4 z-100">
+          <div className="absolute top-0 left-0 right-0 z-100 flex justify-between p-4 pointer-events-auto">
+            {/* Left button: Train Filter */}
+            <div className="flex min-w-fit">
               <TrainFilter
+                isOpen={isFilterOpen}
+                onChange={setVisibleTrainLinesWithOptionalLabels}
+                setIsOpen={() => {
+                  if (isMobile && isInfoHireMeOpen) SetIsInfoHireMeOpen(false);
+                  setIsFilterOpen((prev) => !prev);
+                }}
                 visibleTrainLinesWithOptionalLabels={
                   visibleTrainLinesWithOptionalLabels
                 }
-                onChange={setVisibleTrainLinesWithOptionalLabels}
               />
             </div>
-            <div className="absolute top-4 right-4 z-100">
-              <InfoHireMe 
-              // onChange={() => {}} 
+
+            {/* Right button: Info / Hire Me */}
+            <div className="flex min-w-fit">
+              <InfoHireMe
+                isOpen={isInfoHireMeOpen}
+                setIsOpen={() => {
+                  if (isMobile && isFilterOpen) setIsFilterOpen(false);
+                  SetIsInfoHireMeOpen((prev) => !prev);
+                }}
               />
             </div>
-          </>
+          </div>
         )}
         <Canvas
           className="absolute inset-0 z-0"

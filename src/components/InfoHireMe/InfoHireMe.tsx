@@ -1,29 +1,35 @@
-import { useState } from "react";
+import { hireMeText, infoText } from "./InfoHireMe.containers";
 
-export const InfoHireMe = () => {
-  //   const [isOpen, setIsOpen] = useState(() => window.innerWidth >= 768);
-  const [isOpen, setIsOpen] = useState(false);
-
+export const InfoHireMe = ({
+  isOpen,
+  setIsOpen,
+}: {
+  isOpen: boolean;
+  setIsOpen: () => void;
+}) => {
   return (
-    <div className="absolute top-4 right-4 flex flex-col items-end  justify-end">
+    <div className="flex flex-col items-end  justify-end">
       {/* toggle filter button */}
       <button
         className="bg-white text-black p-2 rounded shadow mb-2 whitespace-nowrap"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={setIsOpen}
       >
-        {isOpen ? "Hide" : "Info / Hire Me <3"}
+        {isOpen ? "Hide" : "About / Hire Me <3"}
       </button>
 
-      {/* info / hire me panel */}
-      <div
-        className={`
-        bg-white px-4 pt-2 pb-4 rounded-lg shadow-md flex flex-col gap-2
-        ${isOpen ? "block" : "hidden"} 
-      `}
-      >
-        {/* Header row */}
-        <div className="flex flex-row mt-4 items-end justify-start font-bold border-b border-gray-300 pb-6 "></div>
-      </div>
+      {/* Panel */}
+      {isOpen && (
+        <div className="bg-white px-5 pt-4 pb-6 rounded-lg shadow-md flex flex-col gap-8 w-[min(90vw,420px)] max-h-[80vh] overflow-y-auto">
+          {/* Info Section */}
+          {infoText}
+
+          {/* Divider */}
+          <div className="border-t border-gray-200" />
+
+          {/* Hire Me Section */}
+          {hireMeText}
+        </div>
+      )}
     </div>
   );
 };

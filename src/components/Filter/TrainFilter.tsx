@@ -1,17 +1,18 @@
-import { useState } from "react";
 import { LINE_IDS } from "../Line/line.constants";
 import { LINE_COLOURS } from "../Line/line.colours";
 import type { VisibleTrainLinesWithOptionalLabels } from "./filter.types";
 
 export const TrainFilter = ({
-  visibleTrainLinesWithOptionalLabels,
+  isOpen,
   onChange,
+  setIsOpen,
+  visibleTrainLinesWithOptionalLabels,
 }: {
-  visibleTrainLinesWithOptionalLabels: VisibleTrainLinesWithOptionalLabels;
+  isOpen: boolean;
   onChange: (updated: VisibleTrainLinesWithOptionalLabels) => void;
+  setIsOpen: () => void;
+  visibleTrainLinesWithOptionalLabels: VisibleTrainLinesWithOptionalLabels;
 }) => {
-  const [isOpen, setIsOpen] = useState(() => window.innerWidth >= 768);
-
   const toggleLine = (lineId: keyof VisibleTrainLinesWithOptionalLabels) => {
     const current = visibleTrainLinesWithOptionalLabels[lineId];
     onChange({
@@ -40,7 +41,7 @@ export const TrainFilter = ({
       {/* toggle filter button */}
       <button
         className="bg-white text-black p-2 rounded shadow mb-2 whitespace-nowrap"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={setIsOpen}
       >
         {isOpen ? "Hide" : "Label & Line Filters"}
       </button>
@@ -53,8 +54,8 @@ export const TrainFilter = ({
       `}
       >
         {/* Header row */}
-        <div className="flex flex-row mt-4 items-end justify-start font-bold border-b border-gray-300 pb-6 ">
-          <div className="flex -mb-6 ml-4 md:ml-3 items-end w-min justify-center ">
+        <div className="flex flex-row mt-6 items-end justify-start font-bold border-b border-gray-300 pb-6 ">
+          <div className="flex -mb-6 ml-4 items-end w-min justify-center ">
             <span className="rotate-[-45deg] origin-bottom-left inline-block whitespace-nowrap">
               Label
             </span>
