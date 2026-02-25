@@ -204,12 +204,23 @@ export const TrainDot = ({
     const offset = -1 * (A / (distance * distance) + B);
     // console.log(offset);
     mat.polygonOffsetUnits = offset;
+
+    const state = dotState.current;
+
+    const maxOpacity =
+      "timeIdle" in state &&
+      state.timeIdle &&
+      Date.now() - state.timeIdle > 120 * 1000
+        ? 0.2
+        : 0.7;
     const fade = Math.max(
       0,
-      Math.min(1, distance > 200 ? 1 - (distance - 200) / 100 : 1),
+      Math.min(
+        maxOpacity,
+        distance > 200 ? 1 - (distance - 200) / 100 : maxOpacity,
+      ),
     );
     mat.opacity = fade;
-    const state = dotState.current;
 
     if (state.type === "initialise") {
       appendDebugLine(`frame: dotState initialise exit`);

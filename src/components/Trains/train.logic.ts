@@ -164,7 +164,7 @@ export function handleInitialise({
     id: destination1Id,
     subsection,
     tEnd: t2,
-    timeIdle: now,
+    timeIdle: now - 120 * 1000, // timeIdle is used to set opacity of dots, inactive 2mins = faded.
     tStart: t1,
     uEnd: u2,
     uStart: u1,

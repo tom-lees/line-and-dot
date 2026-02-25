@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useMemo, useState } from "react";
 // import { ApiSummary } from "./dev/ApiSummary";
@@ -38,18 +39,18 @@ export default function App() {
     visibleTrainLinesWithOptionalLabels,
     setVisibleTrainLinesWithOptionalLabels,
   ] = useState<VisibleTrainLinesWithOptionalLabels>({
-    bakerloo: { line: true, label: false },
-    central: { line: true, label: false },
-    circle: { line: true, label: false },
-    district: { line: true, label: false },
-    elizabeth: { line: true, label: false },
-    hammersmithCity: { line: true, label: false },
-    jubilee: { line: true, label: false },
-    metropolitan: { line: true, label: false },
-    northern: { line: true, label: false },
-    piccadilly: { line: true, label: false },
-    victoria: { line: true, label: false },
-    waterlooCity: { line: true, label: false },
+    bakerloo: { line: true, label: true },
+    central: { line: false, label: false },
+    circle: { line: false, label: false },
+    district: { line: false, label: false },
+    elizabeth: { line: false, label: false },
+    hammersmithCity: { line: false, label: false },
+    jubilee: { line: false, label: false },
+    metropolitan: { line: false, label: false },
+    northern: { line: false, label: false },
+    piccadilly: { line: false, label: false },
+    victoria: { line: false, label: false },
+    waterlooCity: { line: false, label: false },
   });
 
   const normalisedNetwork = useMemo(() => normaliseNetwork(network), []);
@@ -145,6 +146,15 @@ export default function App() {
             minPolarAngle={0}
             maxPolarAngle={Math.PI / 2}
             zoomSpeed={1}
+            mouseButtons={{
+              LEFT: THREE.MOUSE.PAN,
+              MIDDLE: THREE.MOUSE.DOLLY,
+              RIGHT: THREE.MOUSE.ROTATE,
+            }}
+            touches={{
+              ONE: THREE.TOUCH.PAN,
+              TWO: THREE.TOUCH.DOLLY_ROTATE,
+            }}
           />
         </Canvas>
       </div>
