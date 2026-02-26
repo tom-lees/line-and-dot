@@ -130,7 +130,7 @@ export default function App() {
           />
         )}
         {showButtonsAndPanels && (
-          <div className="ui-container p-4 pointer-events-auto">
+          <div className="absolute top-0 left-0 right-0 flex justify-between z-100 p-4 pointer-events-auto">
             {/* Left button: Train Filter */}
             <div className="flex min-w-fit">
               <TrainFilter
