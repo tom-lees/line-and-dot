@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo,  useState } from "react";
 // import { ApiSummary } from "./dev/ApiSummary";
 // import { TrainRecordsTable } from "./dev/TrainRecordsTable";
 import useTrainData from "../hooks/useTrainData";
@@ -66,18 +66,18 @@ export default function App() {
     visibleTrainLinesWithOptionalLabels,
     setVisibleTrainLinesWithOptionalLabels,
   ] = useState<VisibleTrainLinesWithOptionalLabels>({
-    bakerloo: { line: true, label: false },
-    central: { line: true, label: false },
-    circle: { line: true, label: false },
-    district: { line: true, label: false },
-    elizabeth: { line: true, label: false },
-    hammersmithCity: { line: true, label: false },
-    jubilee: { line: true, label: false },
-    metropolitan: { line: true, label: false },
-    northern: { line: true, label: false },
-    piccadilly: { line: true, label: false },
-    victoria: { line: true, label: false },
-    waterlooCity: { line: true, label: false },
+    bakerloo: { line: true, label: true },
+    central: { line: false, label: false },
+    circle: { line: false, label: false },
+    district: { line: false, label: false },
+    elizabeth: { line: false, label: false },
+    hammersmithCity: { line: false, label: false },
+    jubilee: { line: false, label: false },
+    metropolitan: { line: false, label: false },
+    northern: { line: false, label: false },
+    piccadilly: { line: false, label: false },
+    victoria: { line: false, label: false },
+    waterlooCity: { line: false, label: false },
   });
 
   const normalisedNetwork = useMemo(() => normaliseNetwork(network), []);
@@ -130,7 +130,7 @@ export default function App() {
           />
         )}
         {showButtonsAndPanels && (
-          <div className="absolute top-0 left-0 right-0 z-100 flex justify-between p-4 pointer-events-auto">
+          <div className="ui-container p-4 pointer-events-auto">
             {/* Left button: Train Filter */}
             <div className="flex min-w-fit">
               <TrainFilter
@@ -214,7 +214,7 @@ export default function App() {
             }}
             touches={{
               ONE: THREE.TOUCH.PAN,
-              TWO: THREE.TOUCH.DOLLY_ROTATE,
+              TWO: THREE.TOUCH.DOLLY_PAN,
             }}
           />
         </Canvas>
