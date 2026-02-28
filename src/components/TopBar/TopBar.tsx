@@ -1,27 +1,39 @@
 export const TopBar = ({
-  isFilterOpen,
   isAboutOpen,
-  onToggleFilter,
+  isFilterOpen,
+  isMobile,
   onToggleAbout,
+  onToggleFilter,
 }: {
-  isFilterOpen: boolean;
   isAboutOpen: boolean;
-  onToggleFilter: () => void;
+  isFilterOpen: boolean;
+  isMobile: boolean;
   onToggleAbout: () => void;
+  onToggleFilter: () => void;
 }) => {
   return (
     <header>
       <div className="flex justify-between">
         <button
-          className="bg-white text-black p-2 rounded  mb-2 whitespace-nowrap pointer-events-auto"
-          onClick={onToggleFilter}
+          className="bg-stone-100 text-black p-2 rounded  mb-2 whitespace-nowrap pointer-events-auto"
+          onClick={() => {
+            onToggleFilter();
+            if (isMobile && isAboutOpen) {
+              onToggleAbout();
+            }
+          }}
         >
           {isFilterOpen ? "Hide" : "Label & Line Filters"}
         </button>
 
         <button
-          className="bg-white text-black p-2 rounded  mb-2 whitespace-nowrap pointer-events-auto"
-          onClick={onToggleAbout}
+          className="bg-stone-100 text-black p-2 rounded  mb-2 whitespace-nowrap pointer-events-auto"
+          onClick={() => {
+            onToggleAbout();
+            if (isMobile && isFilterOpen) {
+              onToggleFilter();
+            }
+          }}
         >
           {isAboutOpen ? "Hide" : "About / Hire Me <3"}
         </button>

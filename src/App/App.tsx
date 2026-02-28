@@ -40,6 +40,13 @@ export default function App() {
   ] = useState<VisibleTrainLinesWithOptionalLabels>(lineFilterOnStartup);
 
   useEffect(() => {
+    if (showButtonsAndPanels && isMobile && isFilterOpen && isAboutOpen) {
+      setIsAboutOpen(false);
+      setIsFilterOpen(false);
+    }
+  }, [showButtonsAndPanels, isFilterOpen, isAboutOpen, isMobile]);
+
+  useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         setDotResetToken((prev) => prev + 1); // trigger dot reset
@@ -119,6 +126,7 @@ export default function App() {
           <TopBar
             isAboutOpen={isAboutOpen}
             isFilterOpen={isFilterOpen}
+            isMobile={isMobile}
             onToggleAbout={() => setIsAboutOpen((prev) => !prev)}
             onToggleFilter={() => setIsFilterOpen((prev) => !prev)}
           />

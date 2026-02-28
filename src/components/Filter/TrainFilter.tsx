@@ -96,8 +96,8 @@ export const TrainFilter = ({
   );
 
   return (
-    <div className="flex max-w-fit max-h-full pointer-events-auto pb-10">
-      <div className="flex flex-col bg-stone-100 rounded ">
+    <div className="flex w-full max-h-full pb-10">
+      <div className="flex flex-col bg-stone-100 rounded pointer-events-auto ">
         <div className="flex w-full">{header}</div>
         <div className="flex flex-col w-full gap-2  overflow-auto p-4">
           {checkbox}
