@@ -35,6 +35,7 @@ import { nameNormalised, tUnixToTimeString } from "./traindot.utils";
 // TODO Logic for times between stations and train velocities
 // TODO Start of model, estimating the position between station based on arrival times
 //      This can be a rough estimate of times between stations hardcoded.
+const devOn = false;
 
 export const TrainDot = ({
   subsections,
@@ -265,7 +266,7 @@ export const TrainDot = ({
 
   return (
     <mesh ref={meshRef}>
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && devOn && (
         <>
           <DebugLabel
             texts={debugText}

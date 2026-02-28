@@ -12,7 +12,7 @@ const CopyIcon = ({ className }: { className: string }) => (
   </svg>
 );
 
-export const HireMeContact = () => {
+export const Contact = () => {
   const [copied, setCopied] = useState(false);
   const email = "hire-tom@outlook.com";
 
@@ -27,32 +27,26 @@ export const HireMeContact = () => {
   };
 
   return (
-    <section>
-      <h3 className="font-semibold uppercase text-xs tracking-wide text-gray-500">
-        Contact
-      </h3>
+    <div className="relative inline-block mt-2">
+      <button
+        onClick={handleCopy}
+        className="flex items-center gap-2 underline hover:text-gray-600 transition"
+      >
+        {email}
+        <CopyIcon className="w-4 h-4 opacity-60" />
+      </button>
 
-      <div className="relative inline-block mt-2">
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-2 underline hover:text-gray-600 transition"
-        >
-          {email}
-          <CopyIcon className="w-4 h-4 opacity-60" />
-        </button>
-
-        {/* Tooltip */}
-        <span
-          className={`
+      {/* Tooltip */}
+      <span
+        className={`
             absolute -top-6 left-1/2 -translate-x-1/2
             text-xs bg-black text-white px-2 py-1 rounded
             transition-all duration-200
             ${copied ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
           `}
-        >
-          Copied ✓
-        </span>
-      </div>
-    </section>
+      >
+        Copied ✓
+      </span>
+    </div>
   );
 };
