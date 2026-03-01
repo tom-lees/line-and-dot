@@ -109,7 +109,17 @@ export default function App() {
   }, [isMobile]);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden">
+    <main
+      className="relative overflow-hidden"
+      style={{
+        width:
+          "calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right))",
+        height:
+          "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
+        marginLeft: "env(safe-area-inset-left)",
+        marginTop: "env(safe-area-inset-top)",
+      }}
+    >
       {showInstructions && (
         <div className="flex max-w-full max-h-fit rounded pb-4">
           <InstructionsPopup
