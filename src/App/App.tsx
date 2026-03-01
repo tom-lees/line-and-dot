@@ -109,17 +109,7 @@ export default function App() {
   }, [isMobile]);
 
   return (
-    <main
-      className="relative overflow-hidden"
-      style={{
-        width:
-          "calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right))",
-        height:
-          "calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
-        marginLeft: "env(safe-area-inset-left)",
-        marginTop: "env(safe-area-inset-top)",
-      }}
-    >
+    <main className="relative w-screen h-screen overflow-hidden">
       {showInstructions && (
         <div className="flex max-w-full max-h-fit rounded pb-4">
           <InstructionsPopup
@@ -132,7 +122,15 @@ export default function App() {
         </div>
       )}
       {showButtonsAndPanels && (
-        <div className="absolute top-0 right-0 left-0 bottom-0 z-50 p-4 pointer-events-none">
+        <div
+          className="absolute inset-0 z-50 pointer-events-none"
+          style={{
+            paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
+            paddingRight: "calc(env(safe-area-inset-right) + 1rem)",
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)",
+            paddingLeft: "calc(env(safe-area-inset-left) + 1rem)",
+          }}
+        >
           <TopBar
             isAboutOpen={isAboutOpen}
             isFilterOpen={isFilterOpen}
