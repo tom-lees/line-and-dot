@@ -40,7 +40,7 @@ export const Contact = () => {
       <span
         className={`
             absolute -top-6 left-1/2 -translate-x-1/2
-            text-xs bg-black text-white px-2 py-1 rounded
+            text-xs bg-black border border-white text-white px-2 py-1 rounded
             transition-all duration-200
             ${copied ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
           `}
