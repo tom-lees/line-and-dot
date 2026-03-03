@@ -3,7 +3,7 @@ import { Contact } from "./Contact";
 export const hireMeText = (
   <aside className="flex flex-col  max-h-full text-sm text-stone-800">
     {/* Header */}
-    <header className="flex items-center px-4 pb-2 pt-4 justify-between">
+    <header className="flex items-center px-4 pb-2 pt-4 justify-between ">
       <h2 className="text-lg font-bold ">Hire Me</h2>
       <div className="flex font-bold -mt-2">
         <Contact />

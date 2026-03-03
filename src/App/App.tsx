@@ -109,7 +109,7 @@ export default function App() {
   }, [isMobile]);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden">
+    <main className="relative w-screen h-screen h-[100dvh] overflow-hidden">
       {showInstructions && (
         <div className="flex max-w-full max-h-fit rounded pb-4">
           <InstructionsPopup
