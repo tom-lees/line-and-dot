@@ -198,6 +198,24 @@ export const TrainDot = ({
     if (!meshRef.current) return;
     meshRef.current.lookAt(camera.position);
 
+    // Reset to initialise when polling hasn't run for 60 seconds
+    if (
+      "timeLastChange" in dotState.current &&
+      dotState.current.timeLastChange &&
+      dotState.current.timeLastChange < Date.now() - 60 * 1000
+    ) {
+      dotState.current = { type: "initialise" };
+      appendDebugLine(`frame: dotState timeout, set initialise`);
+      return;
+    }
+
+    const state = dotState.current;
+
+    if (state.type === "initialise") {
+      appendDebugLine(`frame: dotState initialise exit`);
+      return;
+    }
+
     const distance = camera.position.distanceTo(meshRef.current.position);
     const mat = meshRef.current.material as THREE.MeshStandardMaterial;
     const A = 33000000;
@@ -206,14 +224,7 @@ export const TrainDot = ({
     // console.log(offset);
     mat.polygonOffsetUnits = offset;
 
-    const state = dotState.current;
-
-    const maxOpacity =
-      "timeIdle" in state &&
-      state.timeIdle &&
-      Date.now() - state.timeIdle > 120 * 1000
-        ? 0.2
-        : 0.7;
+    const maxOpacity = state.type === "idle" ? 0.3 : 0.7;
     const fade = Math.max(
       0,
       Math.min(
@@ -222,11 +233,6 @@ export const TrainDot = ({
       ),
     );
     mat.opacity = fade;
-
-    if (state.type === "initialise") {
-      appendDebugLine(`frame: dotState initialise exit`);
-      return;
-    }
 
     if (state.type === "idle") {
       // appendDebugLine(
