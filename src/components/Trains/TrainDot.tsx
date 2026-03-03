@@ -347,17 +347,17 @@ export const TrainDot = ({
   }
 
   const labelText = `${trainStore.timetable[0].vehicleId.slice(-4)}`;
-  const tt = trainStore.timetable;
-  const timeTableText = tt.map((r) => {
-    return `${tUnixToTimeString(r.expectedArrival)} - ${r.stationName} - ${r.direction} - ${r.id} - ${tUnixToTimeString(r.timeEdit)} `;
-  });
+  // const tt = trainStore.timetable;
+  // const timeTableText = tt.map((r) => {
+  //   return `${tUnixToTimeString(r.expectedArrival)} - ${r.stationName} - ${r.direction} - ${r.id} - ${tUnixToTimeString(r.timeEdit)} `;
+  // });
 
   return (
     <mesh ref={meshRef}>
-      {import.meta.env.DEV && devOn && (
+      {import.meta.env.TEST && devOn && (
         <>
           <DebugLabel
-            texts={[]}
+            texts={debugText}
             position={[0, 0, 0]}
             fontSize={12}
             rotate={"horizontal"}
