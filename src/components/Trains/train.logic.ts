@@ -219,7 +219,7 @@ export function handleIdle({
       destination2.u === state.uEnd
     ) {
       debug?.(`-------- handleIdle: d2 && no change`);
-      return state;
+      return { ...state, timeLastChange: now };
     }
 
     if (subsection === state.subsection && destination1Id === state.id) {
@@ -252,7 +252,7 @@ export function handleIdle({
 
     if (subsection !== state.subsection && destination1Id === state.id) {
       debug?.(
-        `-------- handleIdle: d2 && sub change - state ${state.subsection}  new ${subsection}`,
+        `-------- handleIdle: d2 && sub change - state ${state.subsection.name}  new ${subsection.name}`,
       );
       return {
         type: "idle",
@@ -267,12 +267,14 @@ export function handleIdle({
     }
 
     if (subsection !== state.subsection && destination1Id !== state.id) {
-      // console.log(
-      //   "handleIdle: subsection change",
-      //   state.subsection.name,
-      //   subsection.name,
-      //   destination1.label,
-      // );
+      // TODO Needs serious testing
+      debug?.(
+        `-------- handleIdle: d2 && sub & id change - state ${state.subsection.name}  new ${subsection.name} - state ${state.id}  new ${destination1Id}`,
+      );
+      const setUStart =
+        destination1.u - (destination2.u - destination1.u) > 0.2
+          ? destination1.u
+          : 0;
       return {
         type: "moving",
         id: destination1Id,
@@ -281,10 +283,27 @@ export function handleIdle({
         timeLastChange: now,
         tStart: now,
         uEnd: destination1.u,
-        uStart: 0,
+        uStart: setUStart,
       };
     }
   }
+
+  //
+  // destination2 has despawned, make sure train finishes on same line
+  //
+  if (state.tEnd && state.uEnd) {
+    return {
+      type: "moving",
+      id: destination1Id,
+      subsection: state.subsection,
+      tEnd: destination1.t,
+      timeLastChange: now,
+      tStart: now,
+      uEnd: destination1.u,
+      uStart: state.uStart,
+    };
+  }
+
   //
   //  only destination1 and no records changed, exit.
   //
@@ -294,7 +313,7 @@ export function handleIdle({
     destination1Id === state.id &&
     subsection === state.subsection
   )
-    return state;
+    return { ...state, timeLastChange: now };
 
   //
   // only destination1 and parameters have changed
@@ -315,13 +334,6 @@ export function handleIdle({
   // (this should be a rare occurance)
 
   if (destination1Id !== state.id || subsection !== state.subsection) {
-    // TODO Improve record keeping if this ever gets raised
-    // console.log(
-    //   "handleIdle: subsection change",
-    //   state.subsection.name,
-    //   subsection.name,
-    //   destination1.label,
-    // );
     return {
       type: "idle",
       id: destination1Id,
@@ -335,7 +347,7 @@ export function handleIdle({
   console.error(
     "handleIdle: all conditional has not captured idle train; please investigate",
   );
-  return state;
+  return { ...state, timeLastChange: now };
 }
 
 export function handleMoving({
@@ -393,7 +405,7 @@ export function handleMoving({
       //   state.subsection.name,
       //   destination1.label,
       // );
-      return state;
+      return { ...state, timeLastChange: now };
     }
 
     // Trains currect progress proportionally between uStart and uEnd
@@ -422,8 +434,8 @@ export function handleMoving({
         `###### handleMoving: delay - tE<tS ${tUnixToTimeString(newTStart)} ${tUnixToTimeString(newTEnd)}`,
       );
     }
-    return state;
+    return { ...state, timeLastChange: now };
   }
 
-  return state;
+  return { ...state, timeLastChange: now };
 }

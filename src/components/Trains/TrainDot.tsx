@@ -17,7 +17,7 @@ import type {
 import type { TimetableStore } from "../../data/train/train.service.types";
 import { DebugLabel } from "../Label/DebugLabel";
 import { Label } from "../Label/Label";
-import { nameNormalised, tUnixToTimeString } from "./traindot.utils";
+import { nameNormalised, tUnixToTimeString, uRounded } from "./traindot.utils";
 
 // TODO Add timetracker.  If train has been sationary for longer time fade out.
 // TODO How to handle object delection, is that in parent.
@@ -35,7 +35,7 @@ import { nameNormalised, tUnixToTimeString } from "./traindot.utils";
 // TODO Logic for times between stations and train velocities
 // TODO Start of model, estimating the position between station based on arrival times
 //      This can be a rough estimate of times between stations hardcoded.
-const devOn = false;
+const devOn = true;
 
 export const TrainDot = ({
   subsections,
@@ -47,7 +47,7 @@ export const TrainDot = ({
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
-  const MAX_DEBUG_LINES = 5;
+  const MAX_DEBUG_LINES = 4;
   const [debugText, setDebugText] = useState<string[]>([]);
   const appendDebugLine = (newLine: string) => {
     const timestamp = tUnixToTimeString(Date.now());
@@ -94,6 +94,46 @@ export const TrainDot = ({
 
     const now = Date.now();
 
+    // Remove nullish directions
+    if (trainStore.timetable.length > 2) {
+      trainStore.timetable = trainStore.timetable.filter((r) => r.direction);
+    }
+
+    if (trainStore.timetable.length === 0) return;
+
+    if (trainStore.timetable.length > 3) {
+      const timetableCopy = [...trainStore.timetable];
+      const firstDirection = timetableCopy[0].direction;
+
+      const hasMismatch = timetableCopy.some(
+        (r) => r.direction && r.direction !== firstDirection,
+      );
+
+      if (hasMismatch) {
+        const inboundCount = timetableCopy.filter(
+          (r) => r.direction === "inbound",
+        ).length;
+        const outboundCount = timetableCopy.filter(
+          (r) => r.direction === "outbound",
+        ).length;
+
+        if (inboundCount === outboundCount) return;
+        const dominantDirection =
+          inboundCount < outboundCount ? "outbound" : "inbound";
+
+        const cleanedTimetableCopy = timetableCopy.filter(
+          (r) => r.direction === dominantDirection,
+        );
+
+        if (cleanedTimetableCopy.length > 1) {
+          trainStore.timetable = cleanedTimetableCopy;
+          appendDebugLine(`#### dropped undefined record`);
+        }
+      }
+    }
+
+    if (trainStore.timetable.length === 0) return;
+
     let subsectionAndStationDetails = findSubsectionAndStationDetails({
       subsections,
       trainStore,
@@ -103,7 +143,7 @@ export const TrainDot = ({
       `---- TT: stationName: ${nameNormalised(trainStore.timetable[0].stationName)}    timeEdit: ${tUnixToTimeString(trainStore.timetable[0].timeEdit)}    expectedArrival: ${tUnixToTimeString(trainStore.timetable[0].expectedArrival)}    timeToLive: ${tUnixToTimeString(trainStore.timetable[0].timeToLive)}    timeToStation: ${tUnixToTimeString(trainStore.timetable[0].timeToStation)}`,
     );
     appendDebugLine(
-      `---- d1: ${nameNormalised(subsectionAndStationDetails?.destination1.label)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination1?.t)}    d2: ${nameNormalised(subsectionAndStationDetails?.destination2?.label)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination2?.t)}`,
+      `---- d1: ${nameNormalised(subsectionAndStationDetails?.destination1.label)} - ${uRounded(subsectionAndStationDetails?.destination1.u)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination1?.t)}    d2: ${nameNormalised(subsectionAndStationDetails?.destination2?.label)} - ${uRounded(subsectionAndStationDetails?.destination2?.u)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination2?.t)}`,
     );
 
     if (!subsectionAndStationDetails) {
@@ -136,11 +176,49 @@ export const TrainDot = ({
         `#### timetable: ${nameNormalised(trainStore.timetable[0].stationName)} ${tUnixToTimeString(trainStore.timetable[0].expectedArrival)} ${nameNormalised(trainStore.timetable[1].stationName)} ${tUnixToTimeString(trainStore.timetable[1].expectedArrival)}`,
       );
     }
+
+    if (
+      trainStore.timetable.length > 2 &&
+      "subsection" in dotState.current &&
+      dotState.current.subsection &&
+      dotState.current.subsection.name !== subsection.name
+    ) {
+      const trainStoreDrop1 = {
+        ...trainStore,
+        timetable: trainStore.timetable.slice(1),
+      };
+
+      const subsectionDrop1 = findSubsectionAndStationDetails({
+        subsections,
+        trainStore: trainStoreDrop1,
+      });
+
+      const nameDrop1 = subsectionDrop1?.subsection.name;
+
+      const trainStoreDrop2 = {
+        ...trainStore,
+        timetable: trainStore.timetable.slice(2),
+      };
+
+      const subsectionDrop2 = findSubsectionAndStationDetails({
+        subsections,
+        trainStore: trainStoreDrop2,
+      });
+
+      const nameDrop2 = subsectionDrop2?.subsection.name;
+
+      if (subsection.name !== nameDrop1 || subsection.name !== nameDrop2) {
+        appendDebugLine(
+          `#### subsection mismatch ${trainStore.timetable[0].stationName}`,
+        );
+        return;
+      }
+    }
     dotState.current = (() => {
       switch (dotState.current.type) {
         case "initialise": {
           appendDebugLine(
-            `---- case initialise: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+            `---- case initialise: ${nameNormalised(destination1.label)} ${uRounded(destination1.u)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)}  ${uRounded(destination2?.u)} ${tUnixToTimeString(destination2?.t)}`,
           );
           const trainState = handleInitialise({
             destination1,
@@ -150,13 +228,13 @@ export const TrainDot = ({
             destination2,
           });
           appendDebugLine(
-            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+            `---- state: ${trainState.type} ${uRounded(trainState.uStart)} ${tUnixToTimeString(trainState.tStart)} ${uRounded(trainState.uEnd)} ${tUnixToTimeString(trainState.tEnd)}`,
           );
           return trainState;
         }
         case "idle": {
           appendDebugLine(
-            `---- case idle: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+            `---- case idle: ${nameNormalised(destination1.label)} ${uRounded(destination1.u)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)}  ${uRounded(destination2?.u)} ${tUnixToTimeString(destination2?.t)}`,
           );
           const trainState = handleIdle({
             destination1,
@@ -168,13 +246,13 @@ export const TrainDot = ({
             debug: appendDebugLine,
           });
           appendDebugLine(
-            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+            `---- state: ${trainState.type} ${uRounded(trainState.uStart)} ${tUnixToTimeString(trainState.tStart)} ${uRounded(trainState.uEnd)} ${tUnixToTimeString(trainState.tEnd)}`,
           );
           return trainState;
         }
         case "moving": {
           appendDebugLine(
-            `---- case moving: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+            `---- case moving: ${nameNormalised(destination1.label)} ${uRounded(destination1.u)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)}  ${uRounded(destination2?.u)} ${tUnixToTimeString(destination2?.t)}`,
           );
           const trainState = handleMoving({
             destination1,
@@ -186,7 +264,7 @@ export const TrainDot = ({
             debug: appendDebugLine,
           });
           appendDebugLine(
-            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+            `---- state: ${trainState.type} ${uRounded(trainState.uStart)} ${tUnixToTimeString(trainState.tStart)} ${uRounded(trainState.uEnd)} ${tUnixToTimeString(trainState.tEnd)}`,
           );
           return trainState;
         }
@@ -269,13 +347,17 @@ export const TrainDot = ({
   }
 
   const labelText = `${trainStore.timetable[0].vehicleId.slice(-4)}`;
+  const tt = trainStore.timetable;
+  const timeTableText = tt.map((r) => {
+    return `${tUnixToTimeString(r.expectedArrival)} - ${r.stationName} - ${r.direction} - ${r.id} - ${tUnixToTimeString(r.timeEdit)} `;
+  });
 
   return (
     <mesh ref={meshRef}>
       {import.meta.env.DEV && devOn && (
         <>
           <DebugLabel
-            texts={debugText}
+            texts={[]}
             position={[0, 0, 0]}
             fontSize={12}
             rotate={"horizontal"}
