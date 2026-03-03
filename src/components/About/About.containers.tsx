@@ -49,7 +49,7 @@ export const hireMeText = (
           <p>
             Train positions are estimated in real time using TfL’s public APIs.
           </p>
-          <p className="mb-4">Built independent and not endorsed by TfL.</p>
+          <p></p>
         </div>
       </section>
     </div>
