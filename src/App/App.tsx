@@ -122,15 +122,7 @@ export default function App() {
         </div>
       )}
       {showButtonsAndPanels && (
-        <div
-          className="absolute inset-0 z-50 pointer-events-none safe-padding"
-          style={{
-            paddingTop: "1rem",
-            paddingRight: "1rem",
-            paddingBottom: "1rem",
-            paddingLeft: "1rem",
-          }}
-        >
+        <div className="absolute inset-0 z-50 pointer-events-none safe-padding">
           <TopBar
             isAboutOpen={isAboutOpen}
             isFilterOpen={isFilterOpen}
