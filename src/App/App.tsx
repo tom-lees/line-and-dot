@@ -109,7 +109,7 @@ export default function App() {
   }, [isMobile]);
 
   return (
-    <main className="relative w-screen h-screen h-[100dvh] overflow-hidden">
+    <main className="relative w-screen h-[100dvh] overflow-hidden">
       {showInstructions && (
         <div className="flex max-w-full max-h-fit rounded pb-4">
           <InstructionsPopup
@@ -123,12 +123,12 @@ export default function App() {
       )}
       {showButtonsAndPanels && (
         <div
-          className="absolute inset-0 z-50 pointer-events-none"
+          className="absolute inset-0 z-50 pointer-events-none safe-padding"
           style={{
-            paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
-            paddingRight: "calc(env(safe-area-inset-right) + 1rem)",
-            paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)",
-            paddingLeft: "calc(env(safe-area-inset-left) + 1rem)",
+            paddingTop: "1rem",
+            paddingRight: "1rem",
+            paddingBottom: "1rem",
+            paddingLeft: "1rem",
           }}
         >
           <TopBar
