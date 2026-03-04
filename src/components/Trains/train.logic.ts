@@ -16,9 +16,11 @@ export function findSubsectionAndStationDetails(
   {
     subsections,
     trainStore,
+    debug,
   }: {
     subsections: SubsectionRuntime[];
     trainStore: TimetableStore;
+    debug?: (msg: string) => void;
   },
 ):
   | {
@@ -37,8 +39,11 @@ export function findSubsectionAndStationDetails(
   const destination1name = normaliseName(timetable[0].stationName);
   const destination1T = timetable[0].expectedArrival;
 
+  let debugText = `${destination1name}`;
+
   if (timetable.length > 1) {
     const destination2name = normaliseName(timetable[1].stationName);
+    debugText = `${debugText} ${destination2name}`;
     const destination2T = timetable[1].expectedArrival;
 
     return subsections
@@ -48,6 +53,8 @@ export function findSubsectionAndStationDetails(
         const destination2 = sub.stationMatcher(destination2name);
         if (!destination1 || !destination2) return undefined;
         if (destination1.u >= destination2.u) return undefined;
+        debugText = `${debugText} ${sub.name}`;
+        debug?.(debugText);
         return {
           destination1: { ...destination1, t: destination1T },
           destination1Id,
@@ -73,6 +80,8 @@ export function findSubsectionAndStationDetails(
         // Handles when final record on line does not have a direction
         // TODO Unsure if this works for both start and end of line. Still getting 1% error rate
         // if (destination1.u < 1) return undefined;
+        debugText = `${debugText} ${sub.name}`;
+        debug?.(debugText);
         return {
           destination1: { ...destination1, t: destination1T },
           destination1Id,
@@ -84,11 +93,15 @@ export function findSubsectionAndStationDetails(
 }
 
 export function findPreviousSubsectionAndStationDetails({
+  subName,
   subsections,
   trainTimetable,
+  debug,
 }: {
+  subName: string;
   subsections: SubsectionRuntime[];
   trainTimetable: TrainRecord[];
+  debug?: (msg: string) => void;
 }):
   | {
       destination1: StationWithUAndT;
@@ -97,18 +110,34 @@ export function findPreviousSubsectionAndStationDetails({
     }
   | undefined {
   if (!trainTimetable?.length) return;
+  debug?.(`oooo fpssd TT ${trainTimetable[0].stationName}`);
 
   const destination1Id = trainTimetable[0].id;
   const destination1name = normaliseName(trainTimetable[0].stationName);
   const destination1T = trainTimetable[0].expectedArrival;
+  debug?.(`---- fpssd ${destination1name}`);
 
   return subsections
     .map((sub) => {
       const destination1 = sub.stationMatcher(destination1name);
-      // console.log("prev normalised label", destination1?.normalisedLabel);
-      if (!destination1) return undefined;
-      if (destination1.u < 0.1) return undefined;
-      // console.log("prev:", sub.name);
+      debug?.(`${destination1name} - ${destination1?.label}`);
+      if (sub.name.includes("euston (long")) {
+        // debug?.("###############");
+        // debug?.(`${destination1}`);
+      }
+      if (!destination1) {
+        // debug?.("###############");
+        // debug?.(`undefined exit`);
+        return undefined;
+      }
+      if (destination1.u < 0.5) return undefined;
+      if (
+        (subName.includes("Outbound") && sub.name.includes("Inbound")) ||
+        (subName.includes("Inbound") && sub.name.includes("Outbound"))
+      )
+        return undefined;
+      // debug?.(`---- fpssd ${destination1.label}`);
+      // debug?.(`---- fpssd ${sub.name}`);
       return {
         destination1: { ...destination1, t: destination1T },
         destination1Id,
@@ -124,12 +153,14 @@ export function handleInitialise({
   now,
   subsection,
   destination2,
+  debug,
 }: {
   destination1: StationWithUAndT;
   destination1Id: string;
   now: number;
   subsection: SubsectionRuntime;
   destination2?: StationWithUAndT;
+  debug?: (msg: string) => void;
 }): IdleTrainState | MovingTrainState {
   const { u: u1, t: t1 } = destination1;
   const { u: u2 = undefined, t: t2 = undefined } = destination2 || {};
@@ -142,6 +173,7 @@ export function handleInitialise({
   //
 
   if (t1 > now && u1 - uAdjustment > 0) {
+    debug?.("---- handleInit - train is moving");
     return {
       type: "moving",
       id: destination1Id,
@@ -160,6 +192,7 @@ export function handleInitialise({
 
   // if (now >= destination1t || 0 <= destination1u - uAdjustment) {}
   // console.log(u1);
+  debug?.("---- handleInit - train is idle");
   return {
     type: "idle",
     id: destination1Id,

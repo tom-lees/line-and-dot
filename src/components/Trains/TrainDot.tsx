@@ -18,24 +18,10 @@ import type { TimetableStore } from "../../data/train/train.service.types";
 import { DebugLabel } from "../Label/DebugLabel";
 import { Label } from "../Label/Label";
 import { nameNormalised, tUnixToTimeString, uRounded } from "./traindot.utils";
+import { timetableCleaned } from "./timetable.clean";
 
-// TODO Add timetracker.  If train has been sationary for longer time fade out.
-// TODO How to handle object delection, is that in parent.
-
-// TODO Issue, trains that are skipping stations, across multiple of our segments.
-//      This may make the tranfer logic between lines break.
-
-// TODO Estimate of placement before initial position is based on 1hr30-1hr50 across whole line.
-//      ~ 100 minutes.  Therefore if a train is coming up to station x on initialation, we can
-//      remove # of minutes / 100 from u.  IE, train est.arrival for station x is 2 mins.  Take
-//      station x's u and minus 2/100 * u from it.  (U is always 1, so take 0.02 from station
-//      x's u)
-
-// TODO Add starting station
-// TODO Logic for times between stations and train velocities
-// TODO Start of model, estimating the position between station based on arrival times
-//      This can be a rough estimate of times between stations hardcoded.
-const devOn = true;
+// TODO Actual line length estimate for each line, rather than 100.
+const devOn = false;
 
 export const TrainDot = ({
   subsections,
@@ -47,7 +33,7 @@ export const TrainDot = ({
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
-  const MAX_DEBUG_LINES = 4;
+  const MAX_DEBUG_LINES = 20;
   const [debugText, setDebugText] = useState<string[]>([]);
   const appendDebugLine = (newLine: string) => {
     const timestamp = tUnixToTimeString(Date.now());
@@ -63,87 +49,30 @@ export const TrainDot = ({
 
   const dotState = useRef<TrainState>({ type: "initialise" });
 
-  // TODO Testing
-  // const prevTrainTimetable = useRef<TrainRecord[]>([]);
-  // const [prevStationName, setPrevStationName] = useState<string>("");
-  // useEffect(() => {
-  //   const curr = trainStore.timetable;
-  //   const prev = prevTrainTimetable.current;
-  //   if (prev.length > 0 && curr.length > 0 && curr[0].id !== prev[0].id) {
-  //     setPrevStationName(prev[0].stationName);
-  //   }
-  //   prevTrainTimetable.current = curr;
-  // }, [trainStore]);
-
-  // useEffect(() => {
-
-  //   const onVisibilityChange = () => {
-  //     if (document.visibilityState === "visible") {
-  //       dotState.current = { type: "initialise" };
-  //     }
-  //   };
-  //   document.addEventListener("visibilitychange", onVisibilityChange);
-  //   return () =>
-  //     document.removeEventListener("visibilitychange", onVisibilityChange);
-  // }, []);
-
   useEffect(() => {
-    // appendDebugLine(
-    //   `---- tt0: ${trainStore.timetable[0].stationName} - ${trainStore.timetable[0].direction}`,
-    // );
-
     const now = Date.now();
 
-    // Remove nullish directions
-    if (trainStore.timetable.length > 2) {
-      trainStore.timetable = trainStore.timetable.filter((r) => r.direction);
-    }
-
-    if (trainStore.timetable.length === 0) return;
-
-    if (trainStore.timetable.length > 3) {
-      const timetableCopy = [...trainStore.timetable];
-      const firstDirection = timetableCopy[0].direction;
-
-      const hasMismatch = timetableCopy.some(
-        (r) => r.direction && r.direction !== firstDirection,
-      );
-
-      if (hasMismatch) {
-        const inboundCount = timetableCopy.filter(
-          (r) => r.direction === "inbound",
-        ).length;
-        const outboundCount = timetableCopy.filter(
-          (r) => r.direction === "outbound",
-        ).length;
-
-        if (inboundCount === outboundCount) return;
-        const dominantDirection =
-          inboundCount < outboundCount ? "outbound" : "inbound";
-
-        const cleanedTimetableCopy = timetableCopy.filter(
-          (r) => r.direction === dominantDirection,
-        );
-
-        if (cleanedTimetableCopy.length > 1) {
-          trainStore.timetable = cleanedTimetableCopy;
-          appendDebugLine(`#### dropped undefined record`);
-        }
-      }
-    }
+    trainStore.timetable = timetableCleaned(trainStore.timetable);
 
     if (trainStore.timetable.length === 0) return;
 
     let subsectionAndStationDetails = findSubsectionAndStationDetails({
       subsections,
       trainStore,
+      debug: appendDebugLine,
     });
 
+    if (trainStore.timetable.length > 2) {
+      appendDebugLine(
+        `---- TT: stationName: ${nameNormalised(trainStore.timetable[0].stationName)} ${nameNormalised(trainStore.timetable[1].stationName)} ${nameNormalised(trainStore.timetable[2].stationName)} `,
+      );
+    } else {
+      appendDebugLine(
+        `---- TT: stationName: ${nameNormalised(trainStore.timetable[0].stationName)} `,
+      );
+    }
     appendDebugLine(
-      `---- TT: stationName: ${nameNormalised(trainStore.timetable[0].stationName)}    timeEdit: ${tUnixToTimeString(trainStore.timetable[0].timeEdit)}    expectedArrival: ${tUnixToTimeString(trainStore.timetable[0].expectedArrival)}    timeToLive: ${tUnixToTimeString(trainStore.timetable[0].timeToLive)}    timeToStation: ${tUnixToTimeString(trainStore.timetable[0].timeToStation)}`,
-    );
-    appendDebugLine(
-      `---- d1: ${nameNormalised(subsectionAndStationDetails?.destination1.label)} - ${uRounded(subsectionAndStationDetails?.destination1.u)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination1?.t)}    d2: ${nameNormalised(subsectionAndStationDetails?.destination2?.label)} - ${uRounded(subsectionAndStationDetails?.destination2?.u)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination2?.t)}`,
+      `---- ssd d1: ${nameNormalised(subsectionAndStationDetails?.destination1.label)} - ${uRounded(subsectionAndStationDetails?.destination1.u)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination1?.t)}    d2: ${nameNormalised(subsectionAndStationDetails?.destination2?.label)} - ${uRounded(subsectionAndStationDetails?.destination2?.u)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination2?.t)}`,
     );
 
     if (!subsectionAndStationDetails) {
@@ -158,12 +87,15 @@ export const TrainDot = ({
     // (If does not exist, train is at start of line.)
     // TODO Estimate of line length (100), will not apply to all lines
     // TODO This estimate is for the longest line and may
+    // TODO Create testing suite
     const uAdjustment =
       (subsectionAndStationDetails.destination1.t - now) / (100 * 60 * 1000);
     if (subsectionAndStationDetails.destination1.u - uAdjustment < 0) {
       const prev = findPreviousSubsectionAndStationDetails({
+        subName: subsectionAndStationDetails.subsection.name,
         subsections,
         trainTimetable: trainStore.timetable,
+        debug: appendDebugLine,
       });
       if (prev) subsectionAndStationDetails = prev;
     }
@@ -171,12 +103,7 @@ export const TrainDot = ({
     const { destination1, destination1Id, destination2, subsection } =
       subsectionAndStationDetails;
 
-    if (destination1.t && destination2?.t && destination1.t > destination2.t) {
-      appendDebugLine(
-        `#### timetable: ${nameNormalised(trainStore.timetable[0].stationName)} ${tUnixToTimeString(trainStore.timetable[0].expectedArrival)} ${nameNormalised(trainStore.timetable[1].stationName)} ${tUnixToTimeString(trainStore.timetable[1].expectedArrival)}`,
-      );
-    }
-
+    // TODO Move to own function and test
     if (
       trainStore.timetable.length > 2 &&
       "subsection" in dotState.current &&
@@ -226,6 +153,7 @@ export const TrainDot = ({
             now,
             subsection,
             destination2,
+            debug: appendDebugLine,
           });
           appendDebugLine(
             `---- state: ${trainState.type} ${uRounded(trainState.uStart)} ${tUnixToTimeString(trainState.tStart)} ${uRounded(trainState.uEnd)} ${tUnixToTimeString(trainState.tEnd)}`,
@@ -277,20 +205,19 @@ export const TrainDot = ({
     meshRef.current.lookAt(camera.position);
 
     // Reset to initialise when polling hasn't run for 60 seconds
+    // TODO Global Controls
     if (
       "timeLastChange" in dotState.current &&
       dotState.current.timeLastChange &&
       dotState.current.timeLastChange < Date.now() - 60 * 1000
     ) {
       dotState.current = { type: "initialise" };
-      appendDebugLine(`frame: dotState timeout, set initialise`);
       return;
     }
 
     const state = dotState.current;
 
     if (state.type === "initialise") {
-      appendDebugLine(`frame: dotState initialise exit`);
       return;
     }
 
@@ -299,7 +226,6 @@ export const TrainDot = ({
     const A = 33000000;
     const B = 100;
     const offset = -1 * (A / (distance * distance) + B);
-    // console.log(offset);
     mat.polygonOffsetUnits = offset;
 
     const maxOpacity = state.type === "idle" ? 0.3 : 0.7;
@@ -313,9 +239,6 @@ export const TrainDot = ({
     mat.opacity = fade;
 
     if (state.type === "idle") {
-      // appendDebugLine(
-      //   `frame: dotState idle - set pos to state.uStart - ${uRounded(state.uStart)}`,
-      // );
       const pos = state.subsection.curveData.curve.getPointAt(state.uStart);
       if (meshRef.current) meshRef.current.position.set(pos.x, pos.y, pos.z);
     }
@@ -346,18 +269,27 @@ export const TrainDot = ({
     return null;
   }
 
+  //
+  //  Testing Lables
+  //
   const labelText = `${trainStore.timetable[0].vehicleId.slice(-4)}`;
   // const tt = trainStore.timetable;
   // const timeTableText = tt.map((r) => {
   //   return `${tUnixToTimeString(r.expectedArrival)} - ${r.stationName} - ${r.direction} - ${r.id} - ${tUnixToTimeString(r.timeEdit)} `;
   // });
+  // const filteredText = timeTableText.some((t) => t.includes("Kenton"))
+  //   ? timeTableText
+  //   : [];
+  const filteredText2 = debugText.some((t) => t.includes("Kenton"))
+    ? debugText
+    : [];
 
   return (
     <mesh ref={meshRef}>
-      {import.meta.env.TEST && devOn && (
+      {import.meta.env.DEV && devOn && (
         <>
           <DebugLabel
-            texts={debugText}
+            texts={filteredText2}
             position={[0, 0, 0]}
             fontSize={12}
             rotate={"horizontal"}
