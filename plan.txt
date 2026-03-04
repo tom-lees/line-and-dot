@@ -1,5 +1,0 @@
-The API needs to fetch the data, but then we need to parse that dataset and:
-- Create new train elements
-- Think about filtering by train, or line, or segment.
-- Update exisiting train elements
-- Drop old train elements

@@ -7,7 +7,7 @@ export const tUnixToTimeString = (unix: number | undefined) =>
   });
 
 export const uRounded = (u: number | undefined) =>
-  u && Math.round(u * 100) / 100;
+  u && Math.round(u * 1000) / 1000;
 
 export const nameNormalised = (name: string | undefined) =>
   name && name.replace("Underground Station", "").replace("Rail Station", "");

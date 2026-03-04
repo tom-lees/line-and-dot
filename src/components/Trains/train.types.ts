@@ -15,7 +15,7 @@ export type IdleTrainState = {
   id: string;
   subsection: SubsectionRuntime;
   tEnd?: number;
-  timeIdle:number;
+  timeLastChange: number;
   tStart: number;
   uEnd?: number;
   uStart: number;
@@ -30,6 +30,7 @@ export type MovingTrainState = {
   id: string;
   subsection: SubsectionRuntime;
   tEnd: number;
+  timeLastChange: number;
   tStart: number;
   uEnd: number;
   uStart: number;

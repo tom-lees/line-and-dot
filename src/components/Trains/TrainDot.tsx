@@ -17,24 +17,11 @@ import type {
 import type { TimetableStore } from "../../data/train/train.service.types";
 import { DebugLabel } from "../Label/DebugLabel";
 import { Label } from "../Label/Label";
-import { nameNormalised, tUnixToTimeString } from "./traindot.utils";
+import { nameNormalised, tUnixToTimeString, uRounded } from "./traindot.utils";
+import { timetableCleaned } from "./timetable.clean";
 
-// TODO Add timetracker.  If train has been sationary for longer time fade out.
-// TODO How to handle object delection, is that in parent.
-
-// TODO Issue, trains that are skipping stations, across multiple of our segments.
-//      This may make the tranfer logic between lines break.
-
-// TODO Estimate of placement before initial position is based on 1hr30-1hr50 across whole line.
-//      ~ 100 minutes.  Therefore if a train is coming up to station x on initialation, we can
-//      remove # of minutes / 100 from u.  IE, train est.arrival for station x is 2 mins.  Take
-//      station x's u and minus 2/100 * u from it.  (U is always 1, so take 0.02 from station
-//      x's u)
-
-// TODO Add starting station
-// TODO Logic for times between stations and train velocities
-// TODO Start of model, estimating the position between station based on arrival times
-//      This can be a rough estimate of times between stations hardcoded.
+// TODO Actual line length estimate for each line, rather than 100.
+const devOn = false;
 
 export const TrainDot = ({
   subsections,
@@ -46,7 +33,7 @@ export const TrainDot = ({
   const meshRef = useRef<THREE.Mesh>(null);
   const { camera } = useThree();
 
-  const MAX_DEBUG_LINES = 5;
+  const MAX_DEBUG_LINES = 20;
   const [debugText, setDebugText] = useState<string[]>([]);
   const appendDebugLine = (newLine: string) => {
     const timestamp = tUnixToTimeString(Date.now());
@@ -62,47 +49,30 @@ export const TrainDot = ({
 
   const dotState = useRef<TrainState>({ type: "initialise" });
 
-  // TODO Testing
-  // const prevTrainTimetable = useRef<TrainRecord[]>([]);
-  // const [prevStationName, setPrevStationName] = useState<string>("");
-  // useEffect(() => {
-  //   const curr = trainStore.timetable;
-  //   const prev = prevTrainTimetable.current;
-  //   if (prev.length > 0 && curr.length > 0 && curr[0].id !== prev[0].id) {
-  //     setPrevStationName(prev[0].stationName);
-  //   }
-  //   prevTrainTimetable.current = curr;
-  // }, [trainStore]);
-
-  // useEffect(() => {
-
-  //   const onVisibilityChange = () => {
-  //     if (document.visibilityState === "visible") {
-  //       dotState.current = { type: "initialise" };
-  //     }
-  //   };
-  //   document.addEventListener("visibilitychange", onVisibilityChange);
-  //   return () =>
-  //     document.removeEventListener("visibilitychange", onVisibilityChange);
-  // }, []);
-
   useEffect(() => {
-    // appendDebugLine(
-    //   `---- tt0: ${trainStore.timetable[0].stationName} - ${trainStore.timetable[0].direction}`,
-    // );
-
     const now = Date.now();
+
+    trainStore.timetable = timetableCleaned(trainStore.timetable);
+
+    if (trainStore.timetable.length === 0) return;
 
     let subsectionAndStationDetails = findSubsectionAndStationDetails({
       subsections,
       trainStore,
+      debug: appendDebugLine,
     });
 
+    if (trainStore.timetable.length > 2) {
+      appendDebugLine(
+        `---- TT: stationName: ${nameNormalised(trainStore.timetable[0].stationName)} ${nameNormalised(trainStore.timetable[1].stationName)} ${nameNormalised(trainStore.timetable[2].stationName)} `,
+      );
+    } else {
+      appendDebugLine(
+        `---- TT: stationName: ${nameNormalised(trainStore.timetable[0].stationName)} `,
+      );
+    }
     appendDebugLine(
-      `---- TT: stationName: ${nameNormalised(trainStore.timetable[0].stationName)}    timeEdit: ${tUnixToTimeString(trainStore.timetable[0].timeEdit)}    expectedArrival: ${tUnixToTimeString(trainStore.timetable[0].expectedArrival)}    timeToLive: ${tUnixToTimeString(trainStore.timetable[0].timeToLive)}    timeToStation: ${tUnixToTimeString(trainStore.timetable[0].timeToStation)}`,
-    );
-    appendDebugLine(
-      `---- d1: ${nameNormalised(subsectionAndStationDetails?.destination1.label)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination1?.t)}    d2: ${nameNormalised(subsectionAndStationDetails?.destination2?.label)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination2?.t)}`,
+      `---- ssd d1: ${nameNormalised(subsectionAndStationDetails?.destination1.label)} - ${uRounded(subsectionAndStationDetails?.destination1.u)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination1?.t)}    d2: ${nameNormalised(subsectionAndStationDetails?.destination2?.label)} - ${uRounded(subsectionAndStationDetails?.destination2?.u)} - ${tUnixToTimeString(subsectionAndStationDetails?.destination2?.t)}`,
     );
 
     if (!subsectionAndStationDetails) {
@@ -117,12 +87,15 @@ export const TrainDot = ({
     // (If does not exist, train is at start of line.)
     // TODO Estimate of line length (100), will not apply to all lines
     // TODO This estimate is for the longest line and may
+    // TODO Create testing suite
     const uAdjustment =
       (subsectionAndStationDetails.destination1.t - now) / (100 * 60 * 1000);
     if (subsectionAndStationDetails.destination1.u - uAdjustment < 0) {
       const prev = findPreviousSubsectionAndStationDetails({
+        subName: subsectionAndStationDetails.subsection.name,
         subsections,
         trainTimetable: trainStore.timetable,
+        debug: appendDebugLine,
       });
       if (prev) subsectionAndStationDetails = prev;
     }
@@ -130,16 +103,49 @@ export const TrainDot = ({
     const { destination1, destination1Id, destination2, subsection } =
       subsectionAndStationDetails;
 
-    if (destination1.t && destination2?.t && destination1.t > destination2.t) {
-      appendDebugLine(
-        `#### timetable: ${nameNormalised(trainStore.timetable[0].stationName)} ${tUnixToTimeString(trainStore.timetable[0].expectedArrival)} ${nameNormalised(trainStore.timetable[1].stationName)} ${tUnixToTimeString(trainStore.timetable[1].expectedArrival)}`,
-      );
+    // TODO Move to own function and test
+    if (
+      trainStore.timetable.length > 2 &&
+      "subsection" in dotState.current &&
+      dotState.current.subsection &&
+      dotState.current.subsection.name !== subsection.name
+    ) {
+      const trainStoreDrop1 = {
+        ...trainStore,
+        timetable: trainStore.timetable.slice(1),
+      };
+
+      const subsectionDrop1 = findSubsectionAndStationDetails({
+        subsections,
+        trainStore: trainStoreDrop1,
+      });
+
+      const nameDrop1 = subsectionDrop1?.subsection.name;
+
+      const trainStoreDrop2 = {
+        ...trainStore,
+        timetable: trainStore.timetable.slice(2),
+      };
+
+      const subsectionDrop2 = findSubsectionAndStationDetails({
+        subsections,
+        trainStore: trainStoreDrop2,
+      });
+
+      const nameDrop2 = subsectionDrop2?.subsection.name;
+
+      if (subsection.name !== nameDrop1 || subsection.name !== nameDrop2) {
+        appendDebugLine(
+          `#### subsection mismatch ${trainStore.timetable[0].stationName}`,
+        );
+        return;
+      }
     }
     dotState.current = (() => {
       switch (dotState.current.type) {
         case "initialise": {
           appendDebugLine(
-            `---- case initialise: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+            `---- case initialise: ${nameNormalised(destination1.label)} ${uRounded(destination1.u)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)}  ${uRounded(destination2?.u)} ${tUnixToTimeString(destination2?.t)}`,
           );
           const trainState = handleInitialise({
             destination1,
@@ -147,15 +153,16 @@ export const TrainDot = ({
             now,
             subsection,
             destination2,
+            debug: appendDebugLine,
           });
           appendDebugLine(
-            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+            `---- state: ${trainState.type} ${uRounded(trainState.uStart)} ${tUnixToTimeString(trainState.tStart)} ${uRounded(trainState.uEnd)} ${tUnixToTimeString(trainState.tEnd)}`,
           );
           return trainState;
         }
         case "idle": {
           appendDebugLine(
-            `---- case idle: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+            `---- case idle: ${nameNormalised(destination1.label)} ${uRounded(destination1.u)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)}  ${uRounded(destination2?.u)} ${tUnixToTimeString(destination2?.t)}`,
           );
           const trainState = handleIdle({
             destination1,
@@ -167,13 +174,13 @@ export const TrainDot = ({
             debug: appendDebugLine,
           });
           appendDebugLine(
-            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+            `---- state: ${trainState.type} ${uRounded(trainState.uStart)} ${tUnixToTimeString(trainState.tStart)} ${uRounded(trainState.uEnd)} ${tUnixToTimeString(trainState.tEnd)}`,
           );
           return trainState;
         }
         case "moving": {
           appendDebugLine(
-            `---- case moving: ${nameNormalised(destination1.label)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)} ${tUnixToTimeString(destination2?.t)}`,
+            `---- case moving: ${nameNormalised(destination1.label)} ${uRounded(destination1.u)} ${tUnixToTimeString(destination1.t)} ${nameNormalised(destination2?.label)}  ${uRounded(destination2?.u)} ${tUnixToTimeString(destination2?.t)}`,
           );
           const trainState = handleMoving({
             destination1,
@@ -185,7 +192,7 @@ export const TrainDot = ({
             debug: appendDebugLine,
           });
           appendDebugLine(
-            `---- state: ${trainState.type} ${tUnixToTimeString(trainState.tStart)} ${tUnixToTimeString(trainState.tEnd)}`,
+            `---- state: ${trainState.type} ${uRounded(trainState.uStart)} ${tUnixToTimeString(trainState.tStart)} ${uRounded(trainState.uEnd)} ${tUnixToTimeString(trainState.tEnd)}`,
           );
           return trainState;
         }
@@ -197,22 +204,31 @@ export const TrainDot = ({
     if (!meshRef.current) return;
     meshRef.current.lookAt(camera.position);
 
+    // Reset to initialise when polling hasn't run for 60 seconds
+    // TODO Global Controls
+    if (
+      "timeLastChange" in dotState.current &&
+      dotState.current.timeLastChange &&
+      dotState.current.timeLastChange < Date.now() - 60 * 1000
+    ) {
+      dotState.current = { type: "initialise" };
+      return;
+    }
+
+    const state = dotState.current;
+
+    if (state.type === "initialise") {
+      return;
+    }
+
     const distance = camera.position.distanceTo(meshRef.current.position);
     const mat = meshRef.current.material as THREE.MeshStandardMaterial;
     const A = 33000000;
     const B = 100;
     const offset = -1 * (A / (distance * distance) + B);
-    // console.log(offset);
     mat.polygonOffsetUnits = offset;
 
-    const state = dotState.current;
-
-    const maxOpacity =
-      "timeIdle" in state &&
-      state.timeIdle &&
-      Date.now() - state.timeIdle > 120 * 1000
-        ? 0.2
-        : 0.7;
+    const maxOpacity = state.type === "idle" ? 0.3 : 0.7;
     const fade = Math.max(
       0,
       Math.min(
@@ -222,15 +238,7 @@ export const TrainDot = ({
     );
     mat.opacity = fade;
 
-    if (state.type === "initialise") {
-      appendDebugLine(`frame: dotState initialise exit`);
-      return;
-    }
-
     if (state.type === "idle") {
-      // appendDebugLine(
-      //   `frame: dotState idle - set pos to state.uStart - ${uRounded(state.uStart)}`,
-      // );
       const pos = state.subsection.curveData.curve.getPointAt(state.uStart);
       if (meshRef.current) meshRef.current.position.set(pos.x, pos.y, pos.z);
     }
@@ -261,14 +269,27 @@ export const TrainDot = ({
     return null;
   }
 
+  //
+  //  Testing Lables
+  //
   const labelText = `${trainStore.timetable[0].vehicleId.slice(-4)}`;
+  // const tt = trainStore.timetable;
+  // const timeTableText = tt.map((r) => {
+  //   return `${tUnixToTimeString(r.expectedArrival)} - ${r.stationName} - ${r.direction} - ${r.id} - ${tUnixToTimeString(r.timeEdit)} `;
+  // });
+  // const filteredText = timeTableText.some((t) => t.includes("Kenton"))
+  //   ? timeTableText
+  //   : [];
+  const filteredText2 = debugText.some((t) => t.includes("Kenton"))
+    ? debugText
+    : [];
 
   return (
     <mesh ref={meshRef}>
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV && devOn && (
         <>
           <DebugLabel
-            texts={debugText}
+            texts={filteredText2}
             position={[0, 0, 0]}
             fontSize={12}
             rotate={"horizontal"}

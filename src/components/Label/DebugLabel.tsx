@@ -35,7 +35,7 @@ export function DebugLabel({
         style={{
           fontSize: `${fontSize}px`,
           color: fontColour,
-          background: "rgba(0,0,0,0.5)",
+          background: "rgba(0,0,0,1)",
           fontFamily: "Arial, sans-serif",
           whiteSpace: "pre", // important to preserve line breaks
           pointerEvents: "none",

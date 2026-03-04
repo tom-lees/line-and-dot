@@ -3,7 +3,7 @@
 html,
 body,
 #root {
-  @apply h-full m-0 p-0 bg-black;
+  @apply h-auto m-0 p-0 bg-black;
 
   /* Prevent text selection and long-press menu */
   touch-action: none; /* Prevent default touch gestures */
@@ -19,16 +19,11 @@ canvas {
   -webkit-touch-callout: none;
 }
 
-.ui-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  padding-top: env(safe-area-inset-top);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-  z-index: 100;
-  pointer-events: auto;
+@supports (padding: max(0px)) {
+  .safe-padding {
+    padding-top: calc(env(safe-area-inset-top) + 1rem);
+    padding-right: calc(env(safe-area-inset-right) + 1rem);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+    padding-left: calc(env(safe-area-inset-left) + 1rem);
+  }
 }

@@ -8,7 +8,7 @@ export const InstructionsPopup = ({
   const touchInstructions = (
     <>
       <li>1 finger to drag / pan</li>
-      <li>2 fingers to rotate</li>
+      <li>2 fingers in the same direction to rotate</li>
       <li>Pinch to zoom</li>
     </>
   );
@@ -17,7 +17,7 @@ export const InstructionsPopup = ({
     <>
       <li>Left click to drag / pan</li>
       <li>Right click to rotate</li>
-      <li>Scroll wheel / trackpad to zoom</li>
+      <li>Scroll wheel or trackpad pinch to zoom</li>
     </>
   );
 

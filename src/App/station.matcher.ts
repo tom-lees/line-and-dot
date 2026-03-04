@@ -10,7 +10,7 @@ export const createStationMatcher = (stations: StationWithU[]) => {
     ignoreLocation: true,
     includeScore: true,
     keys: ["normalisedLabel"],
-    threshold: 0.3,
+    threshold: 0.2,
   });
 
   return (stationName: string): StationWithU | undefined => {

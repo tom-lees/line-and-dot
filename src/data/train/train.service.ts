@@ -14,7 +14,7 @@ const API_URL =
   "https://api.tfl.gov.uk/Line/bakerloo,central,circle,district,elizabeth,hammersmith-city,jubilee,metropolitan,northern,piccadilly,victoria,waterloo-city/Arrivals";
 const POLL_MS = 10 * 1000;
 export const FILTER_OUT_FUTURE_TRAINS = 15 * 60 * 1000;
-export const SHORT_EXPIRY = 5 * 1000;
+export const SHORT_EXPIRY = 15 * 1000;
 export const LONG_EXPIRY = 5 * 60 * 1000;
 
 function hasRecordChanged(
