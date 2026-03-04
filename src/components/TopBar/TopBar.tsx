@@ -23,7 +23,7 @@ export const TopBar = ({
             }
           }}
         >
-          {isFilterOpen ? "Hide" : "Label & Line Filters"}
+          {isFilterOpen ? "Hide" : "Station & Line Filters"}
         </button>
 
         <button

@@ -25,7 +25,7 @@ export const hireMeText = (
         </ul>
       </section>
       <section>
-        <h2 className="text-lg font-bold mt-4 mb-2">Overview</h2>
+        <h2 className="text-lg font-bold mt-4 mb-2">About</h2>
         <div className=" space-y-2">
           <p>
             This interactive visualisation renders the London Underground
