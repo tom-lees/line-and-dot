@@ -9,7 +9,7 @@ export const LINE_COLOURS: Record<LineId, string> = {
   hammersmithCity: "#ee9aac",
   jubilee: "#7b858c",
   metropolitan: "#871b55",
-  northern: "#221e1f",
+  northern: "#383435",
   piccadilly: "#2b338c",
   victoria: "#009ddc",
   waterlooCity: "#87cebd",
